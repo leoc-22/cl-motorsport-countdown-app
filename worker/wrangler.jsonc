@@ -1,0 +1,36 @@
+/**
+ * For more details on how to configure Wrangler, refer to:
+ * https://developers.cloudflare.com/workers/wrangler/configuration/
+ */
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "countdown-worker",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-11-09",
+  "migrations": [
+    {
+      "new_sqlite_classes": [
+        "CountdownGroupDurableObject"
+      ],
+      "tag": "v1"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "class_name": "CountdownGroupDurableObject",
+        "name": "COUNTDOWN_GROUP"
+      }
+    ]
+  },
+  "d1_databases": [
+    {
+      "binding": "COUNTDOWN_D1",
+      "database_name": "countdown-db",
+      "database_id": "countdown-db"
+    }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}
