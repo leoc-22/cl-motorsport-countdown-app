@@ -75,9 +75,9 @@ Durable Object appends to `events` for every mutation and periodically refreshes
 ## Implementation Roadmap
 1. ✅ Scaffold UI with Vite/React/TS/Tailwind (Node 22).
 2. ✅ Initialize Worker project via `wrangler`, including bindings for Durable Object + D1.
-3. ☐ Implement DO scheduling/timer logic, alarms, and WebSocket fan-out.
-4. ☐ Connect UI to Worker APIs (mutations + live data) and add auth.
-5. ☐ Add deployment scripts (Pages build, `wrangler deploy` for worker) plus infra as code for D1.
+3. ✅ Add deployment scripts (Pages build, `wrangler deploy` for worker) plus infra as code for D1.
+4. ☐ Implement DO scheduling/timer logic, alarms, and WebSocket fan-out.
+5. ☐ Connect UI to Worker APIs (mutations + live data) and add auth.
 
 ## Development Setup
 > Requires Node.js 22 (run `nvm use 22` from the repo root to sync with `.nvmrc`).
@@ -121,32 +121,54 @@ curl -X POST http://localhost:8787/api/groups/ny-2026/sessions \
 ```
 
 ### Database bootstrap (D1)
-Run the following once after `wrangler d1 create countdown-db` to lay down tables:
-```sql
-CREATE TABLE IF NOT EXISTS groups (
-  group_id TEXT PRIMARY KEY,
-  label TEXT NOT NULL,
-  timezone TEXT NOT NULL,
-  version INTEGER NOT NULL,
-  snapshot TEXT NOT NULL,
-  created_at TEXT NOT NULL,
-  updated_at TEXT NOT NULL
-);
 
-CREATE TABLE IF NOT EXISTS events (
-  event_id TEXT PRIMARY KEY,
-  group_id TEXT NOT NULL,
-  session_id TEXT NOT NULL,
-  action TEXT NOT NULL,
-  payload TEXT,
-  occurred_at TEXT NOT NULL
-);
+**First-time setup** (after creating the database):
+
+1. Create the D1 database:
+```bash
+cd worker
+npx wrangler d1 create countdown-db
 ```
-These mirror the schema the Durable Object already writes to.
+
+2. Copy the `database_id` from the output and update `worker/wrangler.jsonc` (replace `REPLACE_WITH_ACTUAL_DATABASE_UUID`)
+
+3. Apply database migrations:
+```bash
+# For local development
+npx wrangler d1 execute countdown-db --file=migrations/0001_initial_schema.sql --local
+
+# For production
+npx wrangler d1 execute countdown-db --file=migrations/0001_initial_schema.sql --remote
+```
+
+Database migration files are located in `worker/migrations/`. See `worker/migrations/README.md` for details.
+
+## Deployment
+
+See **[DEPLOYMENT.md](DEPLOYMENT.md)** for complete deployment instructions including:
+- One-time Cloudflare setup
+- D1 database creation and migrations
+- Manual deployment commands
+- Automated CI/CD with GitHub Actions
+- Environment configuration
+- Troubleshooting guide
+
+**Quick deployment**:
+```bash
+# Deploy worker
+cd worker
+npm run deploy
+
+# Deploy frontend
+cd web
+npm run deploy
+```
 
 ## Status
 - [x] Architecture + data model defined
 - [x] UI scaffolded with Tailwind theme + mock data
 - [x] Worker + Durable Object scaffolded with CRUD routes and D1 sync hooks
+- [x] Deployment configuration and CI/CD pipeline
+- [x] Database migrations
 - [ ] Countdown logic + live updates implemented
-- [ ] Deployment targets configured
+- [ ] Authentication and authorization

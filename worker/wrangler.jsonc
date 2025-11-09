@@ -9,6 +9,7 @@
 	"compatibility_date": "2025-11-09",
 	"migrations": [
 		{
+			// SQLite-backed Durable Objects enable SQL storage API and point-in-time recovery
 			"new_sqlite_classes": [
 				"CountdownGroupDurableObject"
 			],
@@ -27,7 +28,9 @@
 		{
 			"binding": "COUNTDOWN_D1",
 			"database_name": "countdown-db",
-			"database_id": "countdown-db"
+			// TODO: Replace with actual database UUID from: wrangler d1 create countdown-db
+			// The command will output a UUID like "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+			"database_id": "REPLACE_WITH_ACTUAL_DATABASE_UUID"
 		}
 	],
 	"observability": {

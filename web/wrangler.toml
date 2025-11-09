@@ -1,0 +1,6 @@
+name = "countdown-web"
+compatibility_date = "2025-11-09"
+pages_build_output_dir = "dist"
+
+# Cloudflare Pages configuration for the React frontend
+# Deploy using: wrangler pages deploy dist --project-name=countdown-web
