@@ -1,73 +1,68 @@
-# React + TypeScript + Vite
+# Motorsport Countdown App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A Cloudflare-native countdown timer application for motorsport events, built with React and TanStack Router.
 
-Currently, two official plugins are available:
+## Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **React 19** - UI framework
+- **TanStack Router** - File-based routing with type safety
+- **TypeScript** - Type-safe development
+- **Vite** - Build tool and dev server
+- **Tailwind CSS** - Styling
+- **pnpm** - Package manager
 
-## React Compiler
+## Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Real-time countdown timers for racing sessions
+- Session status tracking (scheduled, running, complete, canceled)
+- Configuration interface for managing countdown groups and sessions
+- Timezone-aware scheduling
+- Designed to integrate with Cloudflare Durable Objects for multi-tab synchronization
 
-## Expanding the ESLint configuration
+## Project Structure
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: './tsconfig.json',
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+src/
+├── routes/              # File-based routes (TanStack Router)
+│   ├── __root.tsx      # Root layout with navigation
+│   ├── index.tsx       # Live countdown view
+│   └── configure.tsx   # Session configuration
+├── components/          # Reusable UI components
+│   ├── ActiveTimer.tsx
+│   ├── SessionList.tsx
+│   └── StatusBadge.tsx
+├── hooks/              # Custom React hooks
+│   └── useCountdownTimer.ts
+└── utils/              # Utilities and types
+    ├── types.ts
+    ├── timeUtils.ts
+    └── CountdownContext.tsx
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Development
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+```bash
+# Install dependencies
+pnpm install
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: './tsconfig.json',
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# Start dev server
+pnpm dev
+
+# Build for production
+pnpm build
+
+# Preview production build
+pnpm preview
+
+# Lint code
+pnpm lint
 ```
+
+## Routing
+
+This app uses TanStack Router's file-based routing system. Routes are automatically generated from files in the `src/routes/` directory:
+
+- `/` - Live countdown view
+- `/configure` - Configuration interface
+
+The route tree is automatically generated in `src/routeTree.gen.ts` by the TanStack Router Vite plugin.

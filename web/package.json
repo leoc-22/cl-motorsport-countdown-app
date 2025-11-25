@@ -13,6 +13,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tanstack/react-router": "^1.139.1",
+    "@tanstack/router-plugin": "^1.139.1",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },
