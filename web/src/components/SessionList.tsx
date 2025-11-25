@@ -10,29 +10,33 @@ type SessionListProps = {
 
 export const SessionList = ({ sessions, currentTime, totalCount }: SessionListProps) => {
   return (
-    <div className="rounded-3xl bg-white/5 p-6 backdrop-blur">
-      <div className="mb-4 flex items-center justify-between">
-        <p className="text-sm font-semibold uppercase tracking-wide text-slate-400">Scheduled Sessions</p>
-        <span className="text-xs text-slate-500">{totalCount} total</span>
+    <div className="space-y-6 rounded-xl border border-border bg-background-surface p-8">
+      <div className="flex items-center justify-between border-b border-border pb-4">
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-zinc-400">Scheduled Sessions</h3>
+        <span className="rounded-full bg-background-elevated px-3 py-1 text-xs font-medium text-zinc-500">
+          {totalCount} total
+        </span>
       </div>
-      <ol className="space-y-4">
+      <ol className="space-y-3">
         {sessions.map((session) => {
           const { label } = getTimeState(session, currentTime)
           return (
             <li
               key={session.sessionId}
-              className="rounded-2xl border border-white/10 bg-surface/50 p-4 transition hover:border-sky-500/50"
+              className="group rounded-lg border border-border bg-background-elevated p-4 transition hover:border-border-hover"
             >
-              <div className="flex items-center justify-between">
+              <div className="mb-3 flex items-start justify-between gap-3">
                 <p className="font-semibold text-white">{session.label}</p>
                 <StatusBadge status={session.status} />
               </div>
-              <p className="text-sm text-slate-400">
-                {intlCache.format(new Date(session.startTimeUtc))} • {label}
-              </p>
-              <p className="text-sm text-slate-500">
-                Duration {formatDuration(session.durationMs)}
-              </p>
+              <div className="space-y-1 text-sm text-zinc-400">
+                <p>{intlCache.format(new Date(session.startTimeUtc))}</p>
+                <div className="flex items-center gap-2">
+                  <span>{label}</span>
+                  <span>•</span>
+                  <span>{formatDuration(session.durationMs)}</span>
+                </div>
+              </div>
             </li>
           )
         })}
