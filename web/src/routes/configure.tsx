@@ -55,24 +55,24 @@ function ConfigureComponent() {
   return (
     <section className="space-y-8">
       <div className="rounded-xl border border-border bg-background-surface p-8">
-        <h2 className="mb-6 text-2xl font-semibold text-white">Group Configuration</h2>
+        <h2 className="mb-6 text-2xl font-semibold text-foreground">Group Configuration</h2>
         <div className="space-y-5">
           <div>
-            <label className="mb-2 block text-sm font-medium text-zinc-300">Group Label</label>
+            <label className="mb-2 block text-sm font-medium text-muted">Group Label</label>
             <input
               type="text"
               value={groupLabel}
               onChange={(e) => setGroupLabel(e.target.value)}
-              className="w-full rounded-lg border border-border bg-background-elevated px-4 py-2.5 text-white placeholder-zinc-500 transition focus:border-accent-blue focus:outline-none focus:ring-1 focus:ring-accent-blue"
+              className="w-full rounded-lg border border-border bg-background-elevated px-4 py-2.5 text-foreground placeholder:text-subtle transition focus:border-accent-blue focus:outline-none focus:ring-1 focus:ring-accent-blue"
             />
           </div>
           <div>
-            <label className="mb-2 block text-sm font-medium text-zinc-300">Timezone</label>
+            <label className="mb-2 block text-sm font-medium text-muted">Timezone</label>
             <input
               type="text"
               value={groupTimezone}
               onChange={(e) => setGroupTimezone(e.target.value)}
-              className="w-full rounded-lg border border-border bg-background-elevated px-4 py-2.5 text-white placeholder-zinc-500 transition focus:border-accent-blue focus:outline-none focus:ring-1 focus:ring-accent-blue"
+              className="w-full rounded-lg border border-border bg-background-elevated px-4 py-2.5 text-foreground placeholder:text-subtle transition focus:border-accent-blue focus:outline-none focus:ring-1 focus:ring-accent-blue"
             />
           </div>
           <div className="flex gap-3 pt-2">
@@ -86,7 +86,7 @@ function ConfigureComponent() {
             <button
               type="button"
               onClick={resetToDefault}
-              className="rounded-lg border border-border px-6 py-2.5 font-medium text-zinc-300 transition hover:bg-background-elevated"
+              className="rounded-lg border border-border px-6 py-2.5 font-medium text-muted transition hover:bg-background-elevated"
             >
               Reset to Default
             </button>
@@ -96,7 +96,7 @@ function ConfigureComponent() {
 
       <div className="rounded-xl border border-border bg-background-surface p-8">
         <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-2xl font-semibold text-white">Sessions</h2>
+          <h2 className="text-2xl font-semibold text-foreground">Sessions</h2>
           <button
             type="button"
             onClick={handleAddSession}
@@ -143,7 +143,7 @@ function SessionCard({
     <div className="rounded-lg border border-border bg-background-elevated p-5">
       <div className="mb-4 flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          <p className="font-semibold text-white">{session.label}</p>
+          <p className="font-semibold text-foreground">{session.label}</p>
           <StatusBadge status={session.status} />
         </div>
         <div className="flex gap-2">
@@ -163,7 +163,7 @@ function SessionCard({
           </button>
         </div>
       </div>
-      <div className="space-y-1.5 text-sm text-zinc-400">
+      <div className="space-y-1.5 text-sm text-subtle">
         <p>Start: {new Date(session.startTimeUtc).toLocaleString()}</p>
         <p>Duration: {Math.floor(session.durationMs / 60000)} minutes</p>
       </div>
@@ -203,42 +203,42 @@ function SessionEditForm({
     <form onSubmit={handleSubmit} className="rounded-lg border-2 border-accent-blue bg-background-elevated p-5">
       <div className="mb-5 space-y-4">
         <div>
-          <label className="mb-2 block text-sm font-medium text-zinc-300">Label</label>
+          <label className="mb-2 block text-sm font-medium text-muted">Label</label>
           <input
             type="text"
             value={label}
             onChange={(e) => setLabel(e.target.value)}
-            className="w-full rounded-lg border border-border bg-background-surface px-4 py-2.5 text-white placeholder-zinc-500 transition focus:border-accent-blue focus:outline-none focus:ring-1 focus:ring-accent-blue"
+            className="w-full rounded-lg border border-border bg-background-surface px-4 py-2.5 text-foreground placeholder:text-subtle transition focus:border-accent-blue focus:outline-none focus:ring-1 focus:ring-accent-blue"
             required
           />
         </div>
         <div>
-          <label className="mb-2 block text-sm font-medium text-zinc-300">Start Time (UTC)</label>
+          <label className="mb-2 block text-sm font-medium text-muted">Start Time (UTC)</label>
           <input
             type="datetime-local"
             value={startTimeUtc}
             onChange={(e) => setStartTimeUtc(e.target.value)}
-            className="w-full rounded-lg border border-border bg-background-surface px-4 py-2.5 text-white placeholder-zinc-500 transition focus:border-accent-blue focus:outline-none focus:ring-1 focus:ring-accent-blue"
+            className="w-full rounded-lg border border-border bg-background-surface px-4 py-2.5 text-foreground placeholder:text-subtle transition focus:border-accent-blue focus:outline-none focus:ring-1 focus:ring-accent-blue"
             required
           />
         </div>
         <div>
-          <label className="mb-2 block text-sm font-medium text-zinc-300">Duration (minutes)</label>
+          <label className="mb-2 block text-sm font-medium text-muted">Duration (minutes)</label>
           <input
             type="number"
             value={durationMinutes}
             onChange={(e) => setDurationMinutes(Number(e.target.value))}
-            className="w-full rounded-lg border border-border bg-background-surface px-4 py-2.5 text-white placeholder-zinc-500 transition focus:border-accent-blue focus:outline-none focus:ring-1 focus:ring-accent-blue"
+            className="w-full rounded-lg border border-border bg-background-surface px-4 py-2.5 text-foreground placeholder:text-subtle transition focus:border-accent-blue focus:outline-none focus:ring-1 focus:ring-accent-blue"
             min="1"
             required
           />
         </div>
         <div>
-          <label className="mb-2 block text-sm font-medium text-zinc-300">Status</label>
+          <label className="mb-2 block text-sm font-medium text-muted">Status</label>
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value as SessionStatus)}
-            className="w-full rounded-lg border border-border bg-background-surface px-4 py-2.5 text-white transition focus:border-accent-blue focus:outline-none focus:ring-1 focus:ring-accent-blue"
+            className="w-full rounded-lg border border-border bg-background-surface px-4 py-2.5 text-foreground transition focus:border-accent-blue focus:outline-none focus:ring-1 focus:ring-accent-blue"
           >
             <option value="scheduled">Scheduled</option>
             <option value="running">Running</option>
@@ -257,7 +257,7 @@ function SessionEditForm({
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-lg border border-border px-5 py-2.5 text-sm font-medium text-zinc-300 transition hover:bg-background-surface"
+          className="rounded-lg border border-border px-5 py-2.5 text-sm font-medium text-muted transition hover:bg-background-surface"
         >
           Cancel
         </button>

@@ -12,8 +12,8 @@ export const SessionList = ({ sessions, currentTime, totalCount }: SessionListPr
   return (
     <div className="space-y-6 rounded-xl border border-border bg-background-surface p-8">
       <div className="flex items-center justify-between border-b border-border pb-4">
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-zinc-400">Scheduled Sessions</h3>
-        <span className="rounded-full bg-background-elevated px-3 py-1 text-xs font-medium text-zinc-500">
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-subtle">Scheduled Sessions</h3>
+        <span className="rounded-full bg-background-elevated px-3 py-1 text-xs font-medium text-subtle">
           {totalCount} total
         </span>
       </div>
@@ -26,10 +26,10 @@ export const SessionList = ({ sessions, currentTime, totalCount }: SessionListPr
               className="group rounded-lg border border-border bg-background-elevated p-4 transition hover:border-border-hover"
             >
               <div className="mb-3 flex items-start justify-between gap-3">
-                <p className="font-semibold text-white">{session.label}</p>
+                <p className="font-semibold text-foreground">{session.label}</p>
                 <StatusBadge status={session.status} />
               </div>
-              <div className="space-y-1 text-sm text-zinc-400">
+              <div className="space-y-1 text-sm text-subtle">
                 <p>{intlCache.format(new Date(session.startTimeUtc))}</p>
                 <div className="flex items-center gap-2">
                   <span>{label}</span>

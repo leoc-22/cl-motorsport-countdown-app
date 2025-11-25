@@ -4,7 +4,7 @@ export const StatusBadge = ({ status }: { status: SessionStatus }) => {
   const palette: Record<SessionStatus, string> = {
     scheduled: 'text-accent-blue bg-accent-blue/10 border-accent-blue/30',
     running: 'text-accent-green bg-accent-green/10 border-accent-green/30',
-    complete: 'text-zinc-500 bg-zinc-500/10 border-zinc-500/30',
+    complete: 'text-subtle bg-foreground/10 border-foreground/20',
     canceled: 'text-accent-red bg-accent-red/10 border-accent-red/30',
   }
 

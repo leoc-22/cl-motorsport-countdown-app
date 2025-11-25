@@ -4,16 +4,43 @@
 
 @layer base {
   :root {
+    color-scheme: light;
     font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    color: #e4e4e7;
-    background-color: #0a0a0b;
+    --color-background: 247 247 249;
+    --color-surface: 255 255 255;
+    --color-elevated: 241 241 245;
+    --color-border: 218 218 228;
+    --color-border-hover: 188 188 200;
+    --color-foreground: 17 17 23;
+    --color-muted: 55 65 81;
+    --color-subtle: 100 116 139;
+    color: rgb(var(--color-foreground));
+    background-color: rgb(var(--color-background));
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --color-background: 10 10 11;
+      --color-surface: 17 17 19;
+      --color-elevated: 26 26 28;
+      --color-border: 39 39 42;
+      --color-border-hover: 63 63 70;
+      --color-foreground: 228 228 231;
+      --color-muted: 212 212 216;
+      --color-subtle: 161 161 170;
+      color: rgb(var(--color-foreground));
+      background-color: rgb(var(--color-background));
+    }
+  }
+
   body {
     margin: 0;
     min-height: 100vh;
+    color: inherit;
+    background-color: inherit;
   }
 }

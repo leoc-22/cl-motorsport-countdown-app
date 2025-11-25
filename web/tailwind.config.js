@@ -13,14 +13,17 @@ export default {
       },
       colors: {
         background: {
-          DEFAULT: '#0a0a0b',
-          surface: '#111113',
-          elevated: '#1a1a1c',
+          DEFAULT: 'rgb(var(--color-background) / <alpha-value>)',
+          surface: 'rgb(var(--color-surface) / <alpha-value>)',
+          elevated: 'rgb(var(--color-elevated) / <alpha-value>)',
         },
         border: {
-          DEFAULT: '#27272a',
-          hover: '#3f3f46',
+          DEFAULT: 'rgb(var(--color-border) / <alpha-value>)',
+          hover: 'rgb(var(--color-border-hover) / <alpha-value>)',
         },
+        foreground: 'rgb(var(--color-foreground) / <alpha-value>)',
+        muted: 'rgb(var(--color-muted) / <alpha-value>)',
+        subtle: 'rgb(var(--color-subtle) / <alpha-value>)',
         accent: {
           blue: '#3b82f6',
           green: '#10b981',
