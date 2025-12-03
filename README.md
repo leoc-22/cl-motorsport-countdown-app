@@ -75,9 +75,9 @@ Durable Object appends to `events` for every mutation and periodically refreshes
 ## Implementation Roadmap
 1. ✅ Scaffold UI with Vite/React/TS/Tailwind (Node 22).
 2. ✅ Initialize Worker project via `wrangler`, including bindings for Durable Object + D1.
-3. ☐ Implement DO scheduling/timer logic, alarms, and WebSocket fan-out.
-4. ☐ Connect UI to Worker APIs (mutations + live data) and add auth.
-5. ☐ Add deployment scripts (Pages build, `wrangler deploy` for worker) plus infra as code for D1.
+3. ✅ Add deployment scripts (GitHub Actions CI/CD for automated deployments).
+4. ☐ Implement DO scheduling/timer logic, alarms, and WebSocket fan-out.
+5. ☐ Connect UI to Worker APIs (mutations + live data) and add auth.
 
 ## Development Setup
 > Requires Node.js 22 (run `nvm use 22` from the repo root to sync with `.nvmrc`).
@@ -144,9 +144,39 @@ CREATE TABLE IF NOT EXISTS events (
 ```
 These mirror the schema the Durable Object already writes to.
 
+## Deployment
+
+The project includes automated CI/CD via GitHub Actions for deploying to Cloudflare.
+
+### Automated Deployment (Recommended)
+
+Every push to `main` automatically deploys:
+- **Worker** → Cloudflare Workers
+- **Web** → Cloudflare Pages
+
+**Setup instructions**: See [`.github/DEPLOYMENT.md`](.github/DEPLOYMENT.md) for:
+- Required GitHub secrets configuration
+- One-time Cloudflare setup steps
+- Troubleshooting guide
+
+### Manual Deployment
+
+For manual deployments or local testing:
+
+```bash
+# Deploy worker
+cd worker
+npm run deploy
+
+# Deploy web
+cd web
+pnpm build
+wrangler pages deploy dist --project-name=motorsport-countdown
+```
+
 ## Status
 - [x] Architecture + data model defined
 - [x] UI scaffolded with Tailwind theme + mock data
 - [x] Worker + Durable Object scaffolded with CRUD routes and D1 sync hooks
+- [x] GitHub Actions CI/CD pipeline configured
 - [ ] Countdown logic + live updates implemented
-- [ ] Deployment targets configured
