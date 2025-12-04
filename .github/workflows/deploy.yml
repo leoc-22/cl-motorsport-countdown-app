@@ -32,7 +32,7 @@ jobs:
       CF_D1_MIGRATIONS_ENABLED: ${{ vars.CF_D1_MIGRATIONS_ENABLED }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Bun
         uses: oven-sh/setup-bun@v1
@@ -63,7 +63,7 @@ jobs:
       CF_PAGES_PROJECT_NAME: ${{ vars.CF_PAGES_PROJECT_NAME }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Bun
         uses: oven-sh/setup-bun@v1
