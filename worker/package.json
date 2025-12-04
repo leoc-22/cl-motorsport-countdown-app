@@ -1,18 +1,19 @@
 {
-	"name": "worker",
-	"version": "0.0.0",
-	"private": true,
-	"engines": {
-		"node": "22.x"
-	},
-	"scripts": {
-		"deploy": "wrangler deploy",
-		"dev": "wrangler dev",
-		"start": "wrangler dev",
-		"cf-typegen": "wrangler types"
-	},
-	"devDependencies": {
-		"typescript": "^5.5.2",
-		"wrangler": "^4.46.0"
-	}
+  "name": "worker",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "bun@1.2.3",
+  "engines": {
+    "node": "22.x"
+  },
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "start": "wrangler dev",
+    "cf-typegen": "wrangler types"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.2",
+    "wrangler": "^4.46.0"
+  }
 }

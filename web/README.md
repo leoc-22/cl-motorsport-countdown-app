@@ -9,7 +9,7 @@ A Cloudflare-native countdown timer application for motorsport events, built wit
 - **TypeScript** - Type-safe development
 - **Vite** - Build tool and dev server
 - **Tailwind CSS** - Styling
-- **pnpm** - Package manager
+- **Bun** - Package manager and runtime
 
 ## Features
 
@@ -43,19 +43,19 @@ src/
 
 ```bash
 # Install dependencies
-pnpm install
+bun install
 
 # Start dev server
-pnpm dev
+bun run dev
 
 # Build for production
-pnpm build
+bun run build
 
 # Preview production build
-pnpm preview
+bun run preview
 
 # Lint code
-pnpm lint
+bun run lint
 ```
 
 ## Routing
