@@ -42,18 +42,18 @@ Pages (React UI) ──HTTP/WebSocket──▶ Worker Router ──fetchStub─�
 ```sql
 countdown_state (
   id TEXT PRIMARY KEY DEFAULT 'default',
-  version INTEGER,
-  snapshot TEXT,        -- JSON blob of DO state
-  created_at TEXT,
-  updated_at TEXT
+  version INTEGER NOT NULL,
+  snapshot TEXT NOT NULL,        -- JSON blob of DO state
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
 );
 
 events (
   event_id TEXT PRIMARY KEY,
-  session_id TEXT,
-  action TEXT,
-  payload TEXT,
-  occurred_at TEXT
+  session_id TEXT NOT NULL,
+  action TEXT NOT NULL,
+  payload TEXT,                  -- nullable JSON
+  occurred_at TEXT NOT NULL
 );
 ```
 Durable Object appends to `events` for every mutation and periodically refreshes `countdown_state.snapshot`. Cold starts replay snapshot + subsequent events to rebuild memory.
@@ -115,6 +115,7 @@ bunx wrangler d1 execute countdown-db --local --persist-to=./.wrangler --command
 > ```
 
 ## Deployment Guide (Cloudflare)
+
 ### 1. Prerequisites
 - Cloudflare account with access to Workers, D1, Durable Objects, and Pages.
 - [Bun 1.2+](https://bun.sh) installed locally (`curl -fsSL https://bun.sh/install | bash`).
@@ -125,10 +126,11 @@ bunx wrangler d1 execute countdown-db --local --persist-to=./.wrangler --command
 1. **D1 database** (once per account):
    ```bash
    cd worker
-   bunx wrangler d1 create countdown-db --binding COUNTDOWN_DB
+   bunx wrangler d1 create countdown-db
    ```
-   Wrangler will output the `database_name`/`database_id`; copy those values into `worker/wrangler.jsonc` **alongside** the same `COUNTDOWN_DB` binding so the Worker environment (`env.COUNTDOWN_DB`) stays consistent.
-2. **Schema**: run the following to create the required tables:
+   Wrangler outputs a `database_id`; update the `database_id` field in `worker/wrangler.jsonc` under the `d1_databases` binding.
+
+2. **Schema**: run the following to create the required tables on the **remote** database:
    ```bash
    # Create countdown_state table
    bunx wrangler d1 execute countdown-db --remote --command "CREATE TABLE IF NOT EXISTS countdown_state (id TEXT PRIMARY KEY DEFAULT 'default', version INTEGER NOT NULL, snapshot TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL);"
@@ -136,61 +138,56 @@ bunx wrangler d1 execute countdown-db --local --persist-to=./.wrangler --command
    # Create events table
    bunx wrangler d1 execute countdown-db --remote --command "CREATE TABLE IF NOT EXISTS events (event_id TEXT PRIMARY KEY, session_id TEXT NOT NULL, action TEXT NOT NULL, payload TEXT, occurred_at TEXT NOT NULL);"
    ```
-3. **Durable Object migration**: the first `wrangler deploy` automatically registers the `CountdownDurableObject` because `wrangler.jsonc` already includes the `new_sqlite_classes` migration tag. No manual step is needed beyond the initial deploy.
+
+3. **Durable Object migration**: the first `wrangler deploy` automatically registers the `CountdownDurableObject` because `wrangler.jsonc` includes the `new_sqlite_classes` migration tag (`v2`). No manual step needed.
 
 ### 3. Deploy the Worker API
 ```bash
 cd worker
-bun install                                # if not already installed
-bunx wrangler deploy                       # uploads Worker, Durable Object, bindings
+bun install
+bun run deploy          # alias for `wrangler deploy`
 ```
-Environment considerations:
-- To deploy to a preview account/environment, append `--env <name>` and configure that env in `wrangler.jsonc`.
-- D1 bindings are environment-specific; ensure each env references the correct `database_id`.
-- Use `bunx wrangler tail` to stream Worker logs immediately after deploy.
+Use `bunx wrangler tail` to stream Worker logs after deploy.
 
 ### 4. Deploy the React UI via Cloudflare Pages
-You can deploy through CI (recommended) or manually with Wrangler.
 
-**Manual one-off deploy**
+**Manual deploy (recommended for initial setup)**
 ```bash
 cd web
 bun install
 VITE_API_URL=https://countdown-worker.<your-subdomain>.workers.dev bun run build
-bunx wrangler pages deploy dist --project-name countdown-ui
+bunx wrangler pages deploy dist --project-name <your-pages-project>
 ```
-- Replace `countdown-ui` with your Pages project name.
-- Set `VITE_API_URL` to your deployed Worker URL.
-- The first run will prompt you to create the project if it does not exist.
+- Replace `<your-pages-project>` with your Pages project name (created on first run if it doesn't exist).
+- Set `VITE_API_URL` to your deployed Worker URL so the frontend knows where to send API requests.
 
-**Git/CI-driven deploy (typical flow)**
+**Dashboard-driven deploy (CI alternative)**
 1. Create a Pages project in the Cloudflare dashboard pointing at your repository.
-2. Set the build command to `bun run build` and the output directory to `web/dist`.
-3. Configure the root directory to `web/` so the Pages builder runs inside the frontend workspace.
-4. Set the environment variable `VITE_API_URL` to your Worker URL.
-5. On each push to the production branch, Pages builds and publishes automatically.
+2. Set root directory to `web/`, build command to `bun run build`, and output directory to `dist`.
+3. Add environment variable `VITE_API_URL` set to your Worker URL.
+4. Pushes to the production branch trigger automatic builds.
 
 ### 5. Post-deployment verification
-- **Health check**: `curl https://<worker-domain>/health` should return `{ "status": "ok" }`.
-- **Create session**: `curl -X POST https://<worker-domain>/api/sessions -d '{"label":"Test","startTimeUtc":"2026-01-01T00:00:00Z","durationMs":3600000}' -H 'content-type: application/json'`.
-- **List sessions**: `curl https://<worker-domain>/api/sessions` to verify D1 writes succeed.
-- **UI**: Visit the Cloudflare Pages URL; confirm it fetches from the Worker.
+```bash
+# Health check
+curl https://<worker-domain>/health
+# Expected: { "status": "ok" }
+
+# Create a test session
+curl -X POST https://<worker-domain>/api/sessions \
+  -H 'content-type: application/json' \
+  -d '{"label":"Test","startTimeUtc":"2026-01-01T00:00:00Z","durationMs":3600000}'
+
+# List sessions
+curl https://<worker-domain>/api/sessions
+```
+Visit the Cloudflare Pages URL to confirm the UI loads and connects to the Worker.
 
 ### 6. Rolling updates & maintenance
-- Re-run `bunx wrangler deploy` after modifying Worker code, Durable Object logic, or `wrangler.jsonc` bindings.
-- Re-run `bunx wrangler d1 migrations apply <name>` once you introduce formal migrations (recommended for future schema changes).
-- For coordinated releases, deploy the Worker first (API compatibility), then publish the Pages build.
-- Capture backups via `bunx wrangler d1 export countdown-db > backup.sql` before major schema or data changes.
-
-### GitHub Actions Automation
-A workflow at `.github/workflows/deploy.yml` automates both deployments:
-- Triggers on pushes to `main` or via manual `workflow_dispatch`.
-- **Secrets required:** `CLOUDFLARE_API_TOKEN` (with Workers + Pages + D1 permissions) and `CLOUDFLARE_ACCOUNT_ID`.
-- **Repository variables:**
-  - `CF_PAGES_PROJECT_NAME` – Cloudflare Pages project slug receiving the frontend build.
-  - `CF_D1_DATABASE_NAME` – Name/identifier of the D1 database (enables the optional migration step).
-  - `CF_D1_MIGRATIONS_ENABLED` – Set to `true` to run `wrangler d1 migrations apply` before deploying the Worker.
-- Worker job runs `bunx wrangler deploy`; the web job builds `web/` and publishes via `bunx wrangler pages deploy`.
+- **Worker updates**: re-run `bun run deploy` from `worker/` after code changes.
+- **Frontend updates**: rebuild and redeploy via `wrangler pages deploy` or push to trigger dashboard CI.
+- **Coordinated releases**: deploy the Worker first (maintains API compatibility), then the Pages build.
+- **Database backups**: `bunx wrangler d1 export countdown-db --remote --output backup.sql` before major changes.
 
 ## Status
 - [x] Architecture + data model defined
@@ -198,4 +195,4 @@ A workflow at `.github/workflows/deploy.yml` automates both deployments:
 - [x] Worker + Durable Object scaffolded with CRUD routes and D1 sync hooks
 - [x] UI wired to Worker API (sessions CRUD)
 - [ ] Countdown logic + live updates implemented
-- [ ] Deployment targets configured
+- [ ] GitHub Actions CI/CD workflow

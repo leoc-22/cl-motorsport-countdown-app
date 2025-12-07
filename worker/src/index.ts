@@ -1,5 +1,5 @@
 import type { CountdownEnv } from "./types";
-import { health, notFound } from "./utils";
+import { health, notFound, preflight } from "./utils";
 import { CountdownDurableObject } from "./durable-objects/countdown";
 
 // Single Durable Object instance for all sessions
@@ -12,6 +12,11 @@ const getCountdownStub = (env: CountdownEnv) => {
 
 export default {
   async fetch(request, env): Promise<Response> {
+    // Handle CORS preflight
+    if (request.method === "OPTIONS") {
+      return preflight();
+    }
+
     const url = new URL(request.url);
 
     if (url.pathname === "/health") {

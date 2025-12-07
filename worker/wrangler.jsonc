@@ -13,6 +13,12 @@
         "CountdownDurableObject"
       ],
       "tag": "v2"
+    },
+    {
+      "deleted_classes": [
+        "CountdownGroupDurableObject"
+      ],
+      "tag": "v3"
     }
   ],
   "durable_objects": {
@@ -27,7 +33,7 @@
     {
       "binding": "COUNTDOWN_DB",
       "database_name": "countdown-db",
-      "database_id": "2537556d-41cb-413a-ba97-e37abdb27ada"
+      "database_id": "b627de3d-988c-430a-b0a1-7a355ca7b07b"
     }
   ],
   "observability": {
