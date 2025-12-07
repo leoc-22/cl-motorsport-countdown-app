@@ -40,7 +40,6 @@ export class CountdownDurableObject extends DurableObject<CountdownEnv> {
         label: payload.label,
         startTimeUtc: payload.startTimeUtc,
         durationMs: payload.durationMs,
-        status: "scheduled",
         metadata: payload.metadata,
       };
 
@@ -81,7 +80,6 @@ export class CountdownDurableObject extends DurableObject<CountdownEnv> {
       if (payload?.label) target.label = payload.label;
       if (payload?.startTimeUtc) target.startTimeUtc = payload.startTimeUtc;
       if (payload?.durationMs) target.durationMs = payload.durationMs;
-      if (payload?.status) target.status = payload.status;
       if (payload?.metadata) {
         target.metadata = {
           ...(target.metadata ?? {}),

@@ -1,9 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { useMemo } from 'react'
 import { useCountdown } from '../utils/CountdownContext'
 import { useCountdownTimer } from '../hooks/useCountdownTimer'
 import { ActiveTimer } from '../components/ActiveTimer'
-import { SessionList } from '../components/SessionList'
 
 export const Route = createFileRoute('/')({
   component: IndexComponent,
@@ -12,16 +10,6 @@ export const Route = createFileRoute('/')({
 function IndexComponent() {
   const { sessions, loading, error } = useCountdown()
   const currentTime = useCountdownTimer()
-
-  const activeSession = useMemo(
-    () => sessions.find((session) => session.status === 'running') ?? sessions[0] ?? null,
-    [sessions],
-  )
-
-  const upcomingSessions = useMemo(
-    () => (activeSession ? sessions.filter((session) => session.sessionId !== activeSession.sessionId) : []),
-    [sessions, activeSession],
-  )
 
   if (loading) {
     return (
@@ -71,14 +59,14 @@ function IndexComponent() {
   }
 
   return (
-    <section className="grid gap-6 lg:grid-cols-3">
-      {activeSession && (
+    <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {sessions.map((session) => (
         <ActiveTimer
-          session={activeSession}
+          key={session.sessionId}
+          session={session}
           currentTime={currentTime}
         />
-      )}
-      <SessionList sessions={upcomingSessions} currentTime={currentTime} totalCount={sessions.length} />
+      ))}
     </section>
   )
 }
