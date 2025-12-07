@@ -178,11 +178,17 @@ function SessionCard({
           </button>
         </div>
       </div>
-      <div className="space-y-1.5 text-sm text-subtle">
-        <p>Start: {new Date(session.startTimeUtc).toLocaleString()}</p>
-        <p>End: {endTime.toLocaleString()}</p>
-        <p className="text-xs text-muted">
-          ({Math.floor(session.durationMs / 60000)} min)
+      <div className="space-y-1.5 text-sm text-subtle tabular-nums">
+        <p>
+          <span className="inline-block w-16">Start:</span>
+          {new Date(session.startTimeUtc).toLocaleString()}
+        </p>
+        <p>
+          <span className="inline-block w-16">End:</span>
+          {endTime.toLocaleString()}
+        </p>
+        <p className="text-muted">
+          {Math.floor(session.durationMs / 60000)} min
         </p>
       </div>
     </div>
