@@ -2,10 +2,28 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Geist Mono Variable Font - Normal */
+@font-face {
+  font-family: "Geist Mono";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/fonts/GeistMono/GeistMono[wght].woff2") format("woff2");
+}
+
+/* Geist Mono Variable Font - Italic */
+@font-face {
+  font-family: "Geist Mono";
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/fonts/GeistMono/GeistMono-Italic[wght].woff2") format("woff2");
+}
+
 @layer base {
   :root {
     color-scheme: light;
-    font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-family: "Geist Mono";
     --color-background: 247 247 249;
     --color-surface: 255 255 255;
     --color-elevated: 241 241 245;

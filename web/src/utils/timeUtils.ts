@@ -38,5 +38,33 @@ export const getTimeState = (session: CountdownSession, pivot: Date): TimeState 
 export const intlCache = new Intl.DateTimeFormat('en-US', {
   dateStyle: 'medium',
   timeStyle: 'short',
-  timeZone: 'UTC',
 })
+
+/**
+ * Convert a UTC ISO string to a local datetime-local input value (YYYY-MM-DDTHH:mm)
+ */
+export const utcToLocalDatetimeInput = (utcIsoString: string): string => {
+  const date = new Date(utcIsoString)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  return `${year}-${month}-${day}T${hours}:${minutes}`
+}
+
+/**
+ * Convert a local datetime-local input value to a UTC ISO string
+ */
+export const localDatetimeInputToUtc = (localDatetime: string): string => {
+  return new Date(localDatetime).toISOString()
+}
+
+/**
+ * Get current local time + offset as a datetime-local input value
+ */
+export const getLocalDatetimeDefault = (offsetMinutes: number = 30): string => {
+  const now = new Date()
+  now.setMinutes(now.getMinutes() + offsetMinutes)
+  return utcToLocalDatetimeInput(now.toISOString())
+}

@@ -1,73 +1,99 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import type { ReactNode } from 'react'
-import type { CountdownGroup } from './types'
-
-const MOCK_GROUP: CountdownGroup = {
-  groupId: 'new-year-2026',
-  label: 'New Year Showcase',
-  timezone: 'UTC',
-  sessions: [
-    {
-      sessionId: 'p1',
-      label: 'Warm-up Run',
-      startTimeUtc: '2026-01-01T13:00:00.000Z',
-      durationMs: 30 * 60 * 1000,
-      status: 'running',
-    },
-    {
-      sessionId: 'p2',
-      label: 'Qualifier',
-      startTimeUtc: '2026-01-01T17:00:00.000Z',
-      durationMs: 60 * 60 * 1000,
-      status: 'scheduled',
-    },
-    {
-      sessionId: 'p3',
-      label: 'Grand Sprint',
-      startTimeUtc: '2026-01-02T09:00:00.000Z',
-      durationMs: 45 * 60 * 1000,
-      status: 'scheduled',
-    },
-  ],
-}
-
-const STORAGE_KEY = 'countdown-group'
+import type { CountdownSession } from './types'
+import { api } from './api'
 
 type CountdownContextType = {
-  group: CountdownGroup
-  updateGroup: (group: CountdownGroup) => void
-  resetToDefault: () => void
+  sessions: CountdownSession[]
+  loading: boolean
+  error: string | null
+  refreshSessions: () => Promise<void>
+  createSession: (session: { label: string; startTimeUtc: string; durationMs: number }) => Promise<CountdownSession>
+  updateSession: (sessionId: string, updates: Partial<CountdownSession>) => Promise<void>
+  deleteSession: (sessionId: string) => Promise<void>
 }
 
 const CountdownContext = createContext<CountdownContextType | undefined>(undefined)
 
 export const CountdownProvider = ({ children }: { children: ReactNode }) => {
-  const [group, setGroup] = useState<CountdownGroup>(() => {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored) {
-      try {
-        return JSON.parse(stored)
-      } catch {
-        return MOCK_GROUP
-      }
+  const [sessions, setSessions] = useState<CountdownSession[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const refreshSessions = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const data = await api.getSessions()
+      setSessions(data)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to fetch sessions'
+      setError(message)
+      setSessions([])
+    } finally {
+      setLoading(false)
     }
-    return MOCK_GROUP
-  })
+  }, [])
+
+  const createSession = useCallback(
+    async (session: { label: string; startTimeUtc: string; durationMs: number }) => {
+      try {
+        const newSession = await api.createSession(session)
+        await refreshSessions()
+        return newSession
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to create session'
+        setError(message)
+        throw err
+      }
+    },
+    [refreshSessions],
+  )
+
+  const updateSession = useCallback(
+    async (sessionId: string, updates: Partial<CountdownSession>) => {
+      try {
+        await api.updateSession(sessionId, updates)
+        await refreshSessions()
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to update session'
+        setError(message)
+        throw err
+      }
+    },
+    [refreshSessions],
+  )
+
+  const deleteSession = useCallback(
+    async (sessionId: string) => {
+      try {
+        await api.deleteSession(sessionId)
+        await refreshSessions()
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to delete session'
+        setError(message)
+        throw err
+      }
+    },
+    [refreshSessions],
+  )
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(group))
-  }, [group])
-
-  const updateGroup = (newGroup: CountdownGroup) => {
-    setGroup(newGroup)
-  }
-
-  const resetToDefault = () => {
-    setGroup(MOCK_GROUP)
-  }
+    refreshSessions()
+  }, [refreshSessions])
 
   return (
-    <CountdownContext.Provider value={{ group, updateGroup, resetToDefault }}>
+    <CountdownContext.Provider
+      value={{
+        sessions,
+        loading,
+        error,
+        refreshSessions,
+        createSession,
+        updateSession,
+        deleteSession,
+      }}
+    >
       {children}
     </CountdownContext.Provider>
   )

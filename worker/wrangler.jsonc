@@ -10,24 +10,30 @@
   "migrations": [
     {
       "new_sqlite_classes": [
+        "CountdownDurableObject"
+      ],
+      "tag": "v2"
+    },
+    {
+      "deleted_classes": [
         "CountdownGroupDurableObject"
       ],
-      "tag": "v1"
+      "tag": "v3"
     }
   ],
   "durable_objects": {
     "bindings": [
       {
-        "class_name": "CountdownGroupDurableObject",
-        "name": "COUNTDOWN_GROUP"
+        "class_name": "CountdownDurableObject",
+        "name": "COUNTDOWN_DO"
       }
     ]
   },
   "d1_databases": [
     {
-      "binding": "COUNTDOWN_D1",
+      "binding": "COUNTDOWN_DB",
       "database_name": "countdown-db",
-      "database_id": "countdown-db"
+      "database_id": "b627de3d-988c-430a-b0a1-7a355ca7b07b"
     }
   ],
   "observability": {
