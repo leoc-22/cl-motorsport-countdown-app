@@ -8,13 +8,6 @@ export type CountdownSession = {
   status: SessionStatus
 }
 
-export type CountdownGroup = {
-  groupId: string
-  label: string
-  timezone: string
-  sessions: CountdownSession[]
-}
-
 export type TimeState = {
   label: string
   diffMs: number
