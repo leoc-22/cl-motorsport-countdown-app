@@ -9,11 +9,23 @@
   "compatibility_date": "2025-11-09",
   "migrations": [
     {
+      "tag": "v1",
+      "new_classes": [
+        "CountdownDurableObject"
+      ]
+    },
+    {
       "new_sqlite_classes": [
         "CountdownDurableObject"
       ],
       "tag": "v2"
     },
+    {
+      "deleted_classes": [
+        "CountdownGroupDurableObject"
+      ],
+      "tag": "v3"
+    }
   ],
   "durable_objects": {
     "bindings": [
