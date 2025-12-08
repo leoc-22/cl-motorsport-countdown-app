@@ -240,34 +240,30 @@ function SessionAddForm({
       className="rounded-lg border-2 border-accent-green bg-background-elevated p-5"
     >
       <h3 className="mb-4 font-semibold text-foreground">New Session</h3>
-      <div className="mb-5 space-y-4">
-        <div>
-          <label className="mb-2 block text-sm font-medium text-muted">
-            Label
-          </label>
+      <div className="mb-5 grid gap-4">
+        <div className="grid gap-2">
+          <label className="text-sm font-medium text-muted">Label</label>
           <input
             type="text"
             value={label}
             onChange={(e) => setLabel(e.target.value)}
             placeholder="Session name"
-            className="w-full rounded-lg border border-border bg-background-surface px-4 py-2.5 text-foreground placeholder:text-subtle transition focus:border-accent-blue focus:outline-none focus:ring-1 focus:ring-accent-blue"
+            className="h-11 rounded-lg border border-border bg-background-surface px-4 text-foreground placeholder:text-subtle transition focus:border-accent-blue focus:outline-none focus:ring-1 focus:ring-accent-blue"
             required
           />
         </div>
-        <div>
-          <label className="mb-2 block text-sm font-medium text-muted">
-            Start Time
-          </label>
+        <div className="grid gap-2">
+          <label className="text-sm font-medium text-muted">Start Time</label>
           <input
             type="datetime-local"
             value={startTimeLocal}
             onChange={(e) => setStartTimeLocal(e.target.value)}
-            className="w-full rounded-lg border border-border bg-background-surface px-4 py-2.5 text-foreground placeholder:text-subtle transition focus:border-accent-blue focus:outline-none focus:ring-1 focus:ring-accent-blue"
+            className="h-11 rounded-lg border border-border bg-background-surface px-4 text-foreground placeholder:text-subtle transition focus:border-accent-blue focus:outline-none focus:ring-1 focus:ring-accent-blue"
             required
           />
         </div>
-        <div>
-          <div className="mb-2 flex items-center gap-4">
+        <div className="grid gap-2">
+          <div className="flex items-center gap-4">
             <label className="text-sm font-medium text-muted">End</label>
             <div className="flex rounded-lg border border-border bg-background-surface p-0.5">
               <button
@@ -294,25 +290,27 @@ function SessionAddForm({
               </button>
             </div>
           </div>
-          {durationMode === "duration" ? (
-            <input
-              type="number"
-              value={durationMinutes}
-              onChange={(e) => setDurationMinutes(Number(e.target.value))}
-              className="w-full rounded-lg border border-border bg-background-surface px-4 py-2.5 text-foreground placeholder:text-subtle transition focus:border-accent-blue focus:outline-none focus:ring-1 focus:ring-accent-blue"
-              min="1"
-              placeholder="Duration in minutes"
-              required
-            />
-          ) : (
-            <input
-              type="datetime-local"
-              value={endTimeLocal}
-              onChange={(e) => setEndTimeLocal(e.target.value)}
-              className="w-full rounded-lg border border-border bg-background-surface px-4 py-2.5 text-foreground placeholder:text-subtle transition focus:border-accent-blue focus:outline-none focus:ring-1 focus:ring-accent-blue"
-              required
-            />
-          )}
+          <div className="grid h-11">
+            {durationMode === "duration" ? (
+              <input
+                type="number"
+                value={durationMinutes}
+                onChange={(e) => setDurationMinutes(Number(e.target.value))}
+                className="rounded-lg border border-border bg-background-surface px-4 text-foreground placeholder:text-subtle transition focus:border-accent-blue focus:outline-none focus:ring-1 focus:ring-accent-blue"
+                min="1"
+                placeholder="Duration in minutes"
+                required
+              />
+            ) : (
+              <input
+                type="datetime-local"
+                value={endTimeLocal}
+                onChange={(e) => setEndTimeLocal(e.target.value)}
+                className="rounded-lg border border-border bg-background-surface px-4 text-foreground placeholder:text-subtle transition focus:border-accent-blue focus:outline-none focus:ring-1 focus:ring-accent-blue"
+                required
+              />
+            )}
+          </div>
         </div>
       </div>
       <div className="flex gap-3">
@@ -382,33 +380,29 @@ function SessionEditForm({
       onSubmit={handleSubmit}
       className="rounded-lg border-2 border-accent-blue bg-background-elevated p-5"
     >
-      <div className="mb-5 space-y-4">
-        <div>
-          <label className="mb-2 block text-sm font-medium text-muted">
-            Label
-          </label>
+      <div className="mb-5 grid gap-4">
+        <div className="grid gap-2">
+          <label className="text-sm font-medium text-muted">Label</label>
           <input
             type="text"
             value={label}
             onChange={(e) => setLabel(e.target.value)}
-            className="w-full rounded-lg border border-border bg-background-surface px-4 py-2.5 text-foreground placeholder:text-subtle transition focus:border-accent-blue focus:outline-none focus:ring-1 focus:ring-accent-blue"
+            className="h-11 rounded-lg border border-border bg-background-surface px-4 text-foreground placeholder:text-subtle transition focus:border-accent-blue focus:outline-none focus:ring-1 focus:ring-accent-blue"
             required
           />
         </div>
-        <div>
-          <label className="mb-2 block text-sm font-medium text-muted">
-            Start Time
-          </label>
+        <div className="grid gap-2">
+          <label className="text-sm font-medium text-muted">Start Time</label>
           <input
             type="datetime-local"
             value={startTimeLocal}
             onChange={(e) => setStartTimeLocal(e.target.value)}
-            className="w-full rounded-lg border border-border bg-background-surface px-4 py-2.5 text-foreground placeholder:text-subtle transition focus:border-accent-blue focus:outline-none focus:ring-1 focus:ring-accent-blue"
+            className="h-11 rounded-lg border border-border bg-background-surface px-4 text-foreground placeholder:text-subtle transition focus:border-accent-blue focus:outline-none focus:ring-1 focus:ring-accent-blue"
             required
           />
         </div>
-        <div>
-          <div className="mb-2 flex items-center gap-4">
+        <div className="grid gap-2">
+          <div className="flex items-center gap-4">
             <label className="text-sm font-medium text-muted">End</label>
             <div className="flex rounded-lg border border-border bg-background-surface p-0.5">
               <button
@@ -435,25 +429,27 @@ function SessionEditForm({
               </button>
             </div>
           </div>
-          {durationMode === "duration" ? (
-            <input
-              type="number"
-              value={durationMinutes}
-              onChange={(e) => setDurationMinutes(Number(e.target.value))}
-              className="w-full rounded-lg border border-border bg-background-surface px-4 py-2.5 text-foreground placeholder:text-subtle transition focus:border-accent-blue focus:outline-none focus:ring-1 focus:ring-accent-blue"
-              min="1"
-              placeholder="Duration in minutes"
-              required
-            />
-          ) : (
-            <input
-              type="datetime-local"
-              value={endTimeLocal}
-              onChange={(e) => setEndTimeLocal(e.target.value)}
-              className="w-full rounded-lg border border-border bg-background-surface px-4 py-2.5 text-foreground placeholder:text-subtle transition focus:border-accent-blue focus:outline-none focus:ring-1 focus:ring-accent-blue"
-              required
-            />
-          )}
+          <div className="grid h-11">
+            {durationMode === "duration" ? (
+              <input
+                type="number"
+                value={durationMinutes}
+                onChange={(e) => setDurationMinutes(Number(e.target.value))}
+                className="rounded-lg border border-border bg-background-surface px-4 text-foreground placeholder:text-subtle transition focus:border-accent-blue focus:outline-none focus:ring-1 focus:ring-accent-blue"
+                min="1"
+                placeholder="Duration in minutes"
+                required
+              />
+            ) : (
+              <input
+                type="datetime-local"
+                value={endTimeLocal}
+                onChange={(e) => setEndTimeLocal(e.target.value)}
+                className="rounded-lg border border-border bg-background-surface px-4 text-foreground placeholder:text-subtle transition focus:border-accent-blue focus:outline-none focus:ring-1 focus:ring-accent-blue"
+                required
+              />
+            )}
+          </div>
         </div>
       </div>
       <div className="flex gap-3">

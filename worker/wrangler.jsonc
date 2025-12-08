@@ -14,12 +14,6 @@
       ],
       "tag": "v2"
     },
-    {
-      "deleted_classes": [
-        "CountdownGroupDurableObject"
-      ],
-      "tag": "v3"
-    }
   ],
   "durable_objects": {
     "bindings": [
