@@ -1,29 +1,27 @@
 # CL Motorsport's Countdown App
 
-Cloudflare-native countdown scheduler for motorsport (or any time-critical event) series. The project keeps every browser tab in sync by letting a single Durable Object instance manage all countdown sessions, while Cloudflare Pages serves the React UI.
+Cloudflare-native countdown scheduler for motorsport (or any time-critical event) series. Built with Cloudflare Workers and D1 database for simple, cost-effective session management.
 
 ## Stack Overview
 - **UI**: Vite + React + TypeScript + Tailwind CSS, deployed through Cloudflare Pages. Tooling runs on Bun 1.2+ while still targeting Node.js 22 for Cloudflare runtime parity.
-- **API**: Cloudflare Worker (modules syntax) routing REST + WebSocket/SSE traffic.
-- **State coordinator**: Single Cloudflare Durable Object responsible for managing all `CountdownSession`s, triggering automatic starts, and broadcasting real-time ticks.
-- **Persistence**: Cloudflare D1 keeps durable snapshots/events. Optional R2 backups for exports.
+- **API**: Cloudflare Worker (modules syntax) providing REST endpoints for session management.
+- **ORM**: Drizzle ORM for type-safe database queries and schema management.
+- **Persistence**: Cloudflare D1 (SQLite) database for storing countdown sessions and event audit logs.
 
 ## Project Layout
 - `web/` – Vite + React + Tailwind frontend that visualizes countdown data and connects to the Worker API.
-- `worker/` – Cloudflare Worker with a `CountdownDurableObject`, REST surface (`/api/sessions/...`), and D1 bindings for snapshots + audit events.
+- `worker/` – Cloudflare Worker with REST endpoints (`/api/sessions/...`) and D1 database integration.
 - `.nvmrc` – pins Node.js 22 for both workspaces.
 
 ## Architecture
 1. User creates/edits countdown sessions via the React UI.
-2. UI calls the Worker HTTP API. Worker routes to the Durable Object.
-3. Durable Object validates mutations, updates its in-memory `sessions` list, syncs changes to D1 (snapshot plus append-only `events` row), and notifies any connected clients.
-4. Clients maintain a WebSocket/SSE subscription; the DO emits authoritative timestamps roughly every second so all tabs show the same remaining time.
-5. DO alarms wake up at exact session boundaries to flip statuses (`scheduled → running → complete`) and immediately start the next session (the "plan ahead" chain).
+2. UI calls the Worker HTTP API for CRUD operations.
+3. Worker uses Drizzle ORM to execute type-safe queries against D1 database.
+4. Sessions are stored in D1 `sessions` table, with audit events in `events` table.
+5. Clients calculate countdowns locally using session start times and durations.
 
 ```
-Pages (React UI) ──HTTP/WebSocket──▶ Worker Router ──fetchStub──▶ Countdown Durable Object
-                                                   │
-                                                   └────SQL────▶ D1 (snapshots + events)
+Pages (React UI) ──HTTP REST──▶ Worker ──Drizzle ORM──▶ D1 Database (sessions + events)
 ```
 
 ## Data Model
@@ -35,28 +33,35 @@ Pages (React UI) ──HTTP/WebSocket──▶ Worker Router ──fetchStub─�
 | `label` | string | e.g., "Qualifying". |
 | `startTimeUtc` | string (ISO) | UTC start timestamp; primary ordering key. |
 | `durationMs` | number | Duration in milliseconds (deterministic end = start + duration). |
-| `status` | enum | `scheduled`, `running`, `complete`, `canceled`. |
 | `metadata` | JSON | Optional notes (track, stream URL, etc.). |
 
 ### D1 tables
-```sql
-countdown_state (
-  id TEXT PRIMARY KEY DEFAULT 'default',
-  version INTEGER NOT NULL,
-  snapshot TEXT NOT NULL,        -- JSON blob of DO state
-  created_at TEXT NOT NULL,
-  updated_at TEXT NOT NULL
-);
 
-events (
-  event_id TEXT PRIMARY KEY,
-  session_id TEXT NOT NULL,
-  action TEXT NOT NULL,
-  payload TEXT,                  -- nullable JSON
-  occurred_at TEXT NOT NULL
-);
+The database schema is defined using Drizzle ORM in `worker/src/schema.ts`:
+
+```typescript
+// sessions table
+export const sessions = sqliteTable('sessions', {
+  sessionId: text('session_id').primaryKey(),
+  label: text('label').notNull(),
+  startTimeUtc: text('start_time_utc').notNull(),
+  durationMs: integer('duration_ms').notNull(),
+  metadata: text('metadata'), // JSON string
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+// events table
+export const events = sqliteTable('events', {
+  eventId: text('event_id').primaryKey(),
+  sessionId: text('session_id').notNull(),
+  action: text('action').notNull(),
+  payload: text('payload'), // JSON string
+  occurredAt: text('occurred_at').notNull(),
+});
 ```
-Durable Object appends to `events` for every mutation and periodically refreshes `countdown_state.snapshot`. Cold starts replay snapshot + subsequent events to rebuild memory.
+
+The Worker uses Drizzle ORM to write to the `sessions` table for all CRUD operations and appends to the `events` table for audit logging. This provides full TypeScript type safety and IntelliSense support.
 
 ## Development Setup
 > Requires Node.js 22 (run `nvm use 22` from the repo root to sync with `.nvmrc`) and Bun 1.2+ for package management (`curl -fsSL https://bun.sh/install | bash`).
@@ -99,25 +104,39 @@ curl http://localhost:8787/api/sessions
 ```
 
 ### Database bootstrap (D1)
-Run the following once after `bunx wrangler d1 create countdown-db` to create the tables in your **local** database:
-```bash
-# Create countdown_state table
-bunx wrangler d1 execute countdown-db --local --persist-to=./.wrangler --command "CREATE TABLE IF NOT EXISTS countdown_state (id TEXT PRIMARY KEY DEFAULT 'default', version INTEGER NOT NULL, snapshot TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL);"
 
-# Create events table
-bunx wrangler d1 execute countdown-db --local --persist-to=./.wrangler --command "CREATE TABLE IF NOT EXISTS events (event_id TEXT PRIMARY KEY, session_id TEXT NOT NULL, action TEXT NOT NULL, payload TEXT, occurred_at TEXT NOT NULL);"
+The database schema is managed using Drizzle ORM. To set up your database:
+
+#### Option 1: Using Drizzle Kit (Recommended)
+```bash
+cd worker
+
+# Generate migration SQL from schema
+npx drizzle-kit generate
+
+# Push schema to local database
+npx drizzle-kit push --dialect=sqlite --driver=d1-http
+
+# Or push to remote database
+npx drizzle-kit push --dialect=sqlite --driver=d1-http
 ```
-> **Important:** The `--local --persist-to=./.wrangler` flags ensure the tables are created in the same local database that `wrangler dev --local --persist-to=./.wrangler` uses. Without these flags, the tables may be created in a different location.
->
-> To apply the schema to the **remote** (deployed) database, use `--remote` instead:
-> ```bash
-> bunx wrangler d1 execute countdown-db --remote --command "CREATE TABLE ..."
-> ```
+
+#### Option 2: Using the generated SQL file
+If you prefer to apply the schema manually:
+```bash
+# Apply schema.sql to local database
+bunx wrangler d1 execute countdown-db --local --persist-to=./.wrangler --file=./schema.sql
+
+# Or apply to remote database
+bunx wrangler d1 execute countdown-db --remote --file=./schema.sql
+```
+
+> **Note:** The Drizzle schema is defined in `worker/src/schema.ts`. Any changes to the database structure should be made there, then migrations regenerated using `drizzle-kit generate`.
 
 ## Deployment Guide (Cloudflare)
 
 ### 1. Prerequisites
-- Cloudflare account with access to Workers, D1, Durable Objects, and Pages.
+- Cloudflare account with access to Workers, D1, and Pages.
 - [Bun 1.2+](https://bun.sh) installed locally (`curl -fsSL https://bun.sh/install | bash`).
 - Logged in with Wrangler: `bunx wrangler login` (opens a browser, stores OAuth token locally).
 - Verify access: `bunx wrangler whoami` should print the target account ID.
@@ -130,16 +149,15 @@ bunx wrangler d1 execute countdown-db --local --persist-to=./.wrangler --command
    ```
    Wrangler outputs a `database_id`; update the `database_id` field in `worker/wrangler.jsonc` under the `d1_databases` binding.
 
-2. **Schema**: run the following to create the required tables on the **remote** database:
+2. **Schema**: apply the database schema using Drizzle Kit:
    ```bash
-   # Create countdown_state table
-   bunx wrangler d1 execute countdown-db --remote --command "CREATE TABLE IF NOT EXISTS countdown_state (id TEXT PRIMARY KEY DEFAULT 'default', version INTEGER NOT NULL, snapshot TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL);"
-
-   # Create events table
-   bunx wrangler d1 execute countdown-db --remote --command "CREATE TABLE IF NOT EXISTS events (event_id TEXT PRIMARY KEY, session_id TEXT NOT NULL, action TEXT NOT NULL, payload TEXT, occurred_at TEXT NOT NULL);"
+   cd worker
+   npx drizzle-kit push --dialect=sqlite --driver=d1-http
    ```
-
-3. **Durable Object migration**: the first `wrangler deploy` automatically registers the `CountdownDurableObject` because `wrangler.jsonc` includes the `new_sqlite_classes` migration tag (`v2`). No manual step needed.
+   Or manually apply the SQL:
+   ```bash
+   bunx wrangler d1 execute countdown-db --remote --file=./schema.sql
+   ```
 
 ### 3. Deploy the Worker API
 ```bash
@@ -192,7 +210,9 @@ Visit the Cloudflare Pages URL to confirm the UI loads and connects to the Worke
 ## Status
 - [x] Architecture + data model defined
 - [x] UI scaffolded with Tailwind theme
-- [x] Worker + Durable Object scaffolded with CRUD routes and D1 sync hooks
+- [x] Worker with CRUD routes and D1 integration
 - [x] UI wired to Worker API (sessions CRUD)
-- [ ] Countdown logic + live updates implemented
+- [x] Client-side countdown calculations
+- [ ] Real-time synchronization (WebSocket/SSE) - future enhancement
+- [ ] Automatic session transitions - future enhancement
 - [ ] GitHub Actions CI/CD workflow
