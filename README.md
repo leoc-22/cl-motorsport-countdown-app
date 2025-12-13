@@ -5,6 +5,7 @@ Cloudflare-native countdown scheduler for motorsport (or any time-critical event
 ## Stack Overview
 - **UI**: Vite + React + TypeScript + Tailwind CSS, deployed through Cloudflare Pages. Tooling runs on Bun 1.2+ while still targeting Node.js 22 for Cloudflare runtime parity.
 - **API**: Cloudflare Worker (modules syntax) providing REST endpoints for session management.
+- **ORM**: Drizzle ORM for type-safe database queries and schema management.
 - **Persistence**: Cloudflare D1 (SQLite) database for storing countdown sessions and event audit logs.
 
 ## Project Layout
@@ -15,12 +16,12 @@ Cloudflare-native countdown scheduler for motorsport (or any time-critical event
 ## Architecture
 1. User creates/edits countdown sessions via the React UI.
 2. UI calls the Worker HTTP API for CRUD operations.
-3. Worker validates requests and executes SQL queries directly against D1 database.
+3. Worker uses Drizzle ORM to execute type-safe queries against D1 database.
 4. Sessions are stored in D1 `sessions` table, with audit events in `events` table.
 5. Clients calculate countdowns locally using session start times and durations.
 
 ```
-Pages (React UI) ──HTTP REST──▶ Worker ──SQL──▶ D1 Database (sessions + events)
+Pages (React UI) ──HTTP REST──▶ Worker ──Drizzle ORM──▶ D1 Database (sessions + events)
 ```
 
 ## Data Model
@@ -35,26 +36,32 @@ Pages (React UI) ──HTTP REST──▶ Worker ──SQL──▶ D1 Database 
 | `metadata` | JSON | Optional notes (track, stream URL, etc.). |
 
 ### D1 tables
-```sql
-sessions (
-  session_id TEXT PRIMARY KEY,
-  label TEXT NOT NULL,
-  start_time_utc TEXT NOT NULL,
-  duration_ms INTEGER NOT NULL,
-  metadata TEXT,                 -- nullable JSON
-  created_at TEXT NOT NULL,
-  updated_at TEXT NOT NULL
-);
 
-events (
-  event_id TEXT PRIMARY KEY,
-  session_id TEXT NOT NULL,
-  action TEXT NOT NULL,           -- e.g., "session.created", "session.updated", "session.deleted"
-  payload TEXT,                   -- nullable JSON
-  occurred_at TEXT NOT NULL
-);
+The database schema is defined using Drizzle ORM in `worker/src/schema.ts`:
+
+```typescript
+// sessions table
+export const sessions = sqliteTable('sessions', {
+  sessionId: text('session_id').primaryKey(),
+  label: text('label').notNull(),
+  startTimeUtc: text('start_time_utc').notNull(),
+  durationMs: integer('duration_ms').notNull(),
+  metadata: text('metadata'), // JSON string
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+// events table
+export const events = sqliteTable('events', {
+  eventId: text('event_id').primaryKey(),
+  sessionId: text('session_id').notNull(),
+  action: text('action').notNull(),
+  payload: text('payload'), // JSON string
+  occurredAt: text('occurred_at').notNull(),
+});
 ```
-The Worker writes to the `sessions` table for all CRUD operations and appends to the `events` table for audit logging.
+
+The Worker uses Drizzle ORM to write to the `sessions` table for all CRUD operations and appends to the `events` table for audit logging. This provides full TypeScript type safety and IntelliSense support.
 
 ## Development Setup
 > Requires Node.js 22 (run `nvm use 22` from the repo root to sync with `.nvmrc`) and Bun 1.2+ for package management (`curl -fsSL https://bun.sh/install | bash`).
@@ -97,17 +104,34 @@ curl http://localhost:8787/api/sessions
 ```
 
 ### Database bootstrap (D1)
-Run the following once after `bunx wrangler d1 create countdown-db` to create the tables in your **local** database:
+
+The database schema is managed using Drizzle ORM. To set up your database:
+
+#### Option 1: Using Drizzle Kit (Recommended)
 ```bash
-# Apply schema to local database
-bunx wrangler d1 execute countdown-db --local --persist-to=./.wrangler --file=./schema.sql
+cd worker
+
+# Generate migration SQL from schema
+npx drizzle-kit generate
+
+# Push schema to local database
+npx drizzle-kit push --dialect=sqlite --driver=d1-http
+
+# Or push to remote database
+npx drizzle-kit push --dialect=sqlite --driver=d1-http
 ```
-> **Important:** The `--local --persist-to=./.wrangler` flags ensure the tables are created in the same local database that `wrangler dev --local --persist-to=./.wrangler` uses. Without these flags, the tables may be created in a different location.
->
-> To apply the schema to the **remote** (deployed) database, use `--remote` instead:
-> ```bash
-> bunx wrangler d1 execute countdown-db --remote --file=./schema.sql
-> ```
+
+#### Option 2: Using the generated SQL file
+If you prefer to apply the schema manually:
+```bash
+# Apply schema.sql to local database
+bunx wrangler d1 execute countdown-db --local --persist-to=./.wrangler --file=./schema.sql
+
+# Or apply to remote database
+bunx wrangler d1 execute countdown-db --remote --file=./schema.sql
+```
+
+> **Note:** The Drizzle schema is defined in `worker/src/schema.ts`. Any changes to the database structure should be made there, then migrations regenerated using `drizzle-kit generate`.
 
 ## Deployment Guide (Cloudflare)
 
@@ -125,7 +149,12 @@ bunx wrangler d1 execute countdown-db --local --persist-to=./.wrangler --file=./
    ```
    Wrangler outputs a `database_id`; update the `database_id` field in `worker/wrangler.jsonc` under the `d1_databases` binding.
 
-2. **Schema**: run the following to create the required tables on the **remote** database:
+2. **Schema**: apply the database schema using Drizzle Kit:
+   ```bash
+   cd worker
+   npx drizzle-kit push --dialect=sqlite --driver=d1-http
+   ```
+   Or manually apply the SQL:
    ```bash
    bunx wrangler d1 execute countdown-db --remote --file=./schema.sql
    ```
