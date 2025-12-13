@@ -1,5 +1,8 @@
 import type { CountdownEnv, CountdownSession } from "./types";
 import { health, notFound, preflight, json, badRequest } from "./utils";
+import { drizzle } from "drizzle-orm/d1";
+import { sessions, events } from "./schema";
+import { eq } from "drizzle-orm";
 
 export default {
   async fetch(request, env): Promise<Response> {
@@ -14,24 +17,33 @@ export default {
       return health();
     }
 
+    // Initialize Drizzle ORM
+    const db = drizzle(env.COUNTDOWN_DB);
+
     // GET /api/sessions - list all sessions
     if (request.method === "GET" && url.pathname === "/api/sessions") {
       try {
-        const result = await env.COUNTDOWN_DB.prepare(
-          `SELECT session_id, label, start_time_utc, duration_ms, metadata
-           FROM sessions
-           ORDER BY start_time_utc ASC`
-        ).all();
+        const allSessions = await db
+          .select({
+            sessionId: sessions.sessionId,
+            label: sessions.label,
+            startTimeUtc: sessions.startTimeUtc,
+            durationMs: sessions.durationMs,
+            metadata: sessions.metadata,
+          })
+          .from(sessions)
+          .orderBy(sessions.startTimeUtc);
 
-        const sessions: CountdownSession[] = (result.results || []).map((row: any) => ({
-          sessionId: row.session_id,
+        // Map to CountdownSession type with parsed metadata
+        const mappedSessions: CountdownSession[] = allSessions.map((row) => ({
+          sessionId: row.sessionId,
           label: row.label,
-          startTimeUtc: row.start_time_utc,
-          durationMs: row.duration_ms,
+          startTimeUtc: row.startTimeUtc,
+          durationMs: row.durationMs,
           metadata: row.metadata ? JSON.parse(row.metadata) : undefined,
         }));
 
-        return json(sessions);
+        return json(mappedSessions);
       } catch (error) {
         console.error("Failed to fetch sessions:", error);
         return json({ error: "Failed to fetch sessions" }, { status: 500 });
@@ -57,34 +69,25 @@ export default {
         const sessionId = crypto.randomUUID();
         const now = new Date().toISOString();
 
-        await env.COUNTDOWN_DB.prepare(
-          `INSERT INTO sessions (session_id, label, start_time_utc, duration_ms, metadata, created_at, updated_at)
-           VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)`
-        )
-          .bind(
-            sessionId,
-            payload.label,
-            payload.startTimeUtc,
-            payload.durationMs,
-            payload.metadata ? JSON.stringify(payload.metadata) : null,
-            now,
-            now
-          )
-          .run();
+        // Insert session using Drizzle
+        await db.insert(sessions).values({
+          sessionId,
+          label: payload.label,
+          startTimeUtc: payload.startTimeUtc,
+          durationMs: payload.durationMs,
+          metadata: payload.metadata ? JSON.stringify(payload.metadata) : null,
+          createdAt: now,
+          updatedAt: now,
+        });
 
         // Record event for audit log
-        await env.COUNTDOWN_DB.prepare(
-          `INSERT INTO events (event_id, session_id, action, payload, occurred_at)
-           VALUES (?1, ?2, ?3, ?4, ?5)`
-        )
-          .bind(
-            crypto.randomUUID(),
-            sessionId,
-            "session.created",
-            JSON.stringify(payload),
-            now
-          )
-          .run();
+        await db.insert(events).values({
+          eventId: crypto.randomUUID(),
+          sessionId,
+          action: "session.created",
+          payload: JSON.stringify(payload),
+          occurredAt: now,
+        });
 
         const session: CountdownSession = {
           sessionId,
@@ -110,24 +113,28 @@ export default {
       }
 
       try {
-        const result = await env.COUNTDOWN_DB.prepare(
-          `SELECT session_id, label, start_time_utc, duration_ms, metadata
-           FROM sessions
-           WHERE session_id = ?1`
-        )
-          .bind(sessionId)
-          .first();
+        const result = await db
+          .select({
+            sessionId: sessions.sessionId,
+            label: sessions.label,
+            startTimeUtc: sessions.startTimeUtc,
+            durationMs: sessions.durationMs,
+            metadata: sessions.metadata,
+          })
+          .from(sessions)
+          .where(eq(sessions.sessionId, sessionId))
+          .get();
 
         if (!result) {
           return notFound("Session");
         }
 
         const session: CountdownSession = {
-          sessionId: result.session_id as string,
-          label: result.label as string,
-          startTimeUtc: result.start_time_utc as string,
-          durationMs: result.duration_ms as number,
-          metadata: result.metadata ? JSON.parse(result.metadata as string) : undefined,
+          sessionId: result.sessionId,
+          label: result.label,
+          startTimeUtc: result.startTimeUtc,
+          durationMs: result.durationMs,
+          metadata: result.metadata ? JSON.parse(result.metadata) : undefined,
         };
 
         return json(session);
@@ -149,86 +156,69 @@ export default {
         const payload = (await request.json().catch(() => null)) as Partial<CountdownSession> | null;
 
         // Check if session exists
-        const existing = await env.COUNTDOWN_DB.prepare(
-          `SELECT session_id, label, start_time_utc, duration_ms, metadata
-           FROM sessions
-           WHERE session_id = ?1`
-        )
-          .bind(sessionId)
-          .first();
+        const existing = await db
+          .select()
+          .from(sessions)
+          .where(eq(sessions.sessionId, sessionId))
+          .get();
 
         if (!existing) {
           return notFound("Session");
         }
 
-        // Build update query dynamically based on provided fields
-        const updates: string[] = [];
-        const bindings: any[] = [];
-        let bindIndex = 1;
+        // Build update object
+        const updateData: Partial<typeof sessions.$inferInsert> = {
+          updatedAt: new Date().toISOString(),
+        };
 
         if (payload?.label) {
-          updates.push(`label = ?${bindIndex++}`);
-          bindings.push(payload.label);
+          updateData.label = payload.label;
         }
         if (payload?.startTimeUtc) {
-          updates.push(`start_time_utc = ?${bindIndex++}`);
-          bindings.push(payload.startTimeUtc);
+          updateData.startTimeUtc = payload.startTimeUtc;
         }
         if (payload?.durationMs !== undefined) {
-          updates.push(`duration_ms = ?${bindIndex++}`);
-          bindings.push(payload.durationMs);
+          updateData.durationMs = payload.durationMs;
         }
         if (payload?.metadata) {
-          const currentMetadata = existing.metadata ? JSON.parse(existing.metadata as string) : {};
+          const currentMetadata = existing.metadata ? JSON.parse(existing.metadata) : {};
           const mergedMetadata = { ...currentMetadata, ...payload.metadata };
-          updates.push(`metadata = ?${bindIndex++}`);
-          bindings.push(JSON.stringify(mergedMetadata));
+          updateData.metadata = JSON.stringify(mergedMetadata);
         }
 
-        if (updates.length === 0) {
+        if (Object.keys(updateData).length === 1) {
+          // Only updatedAt, no actual fields to update
           return badRequest("No valid fields to update");
         }
 
-        const now = new Date().toISOString();
-        updates.push(`updated_at = ?${bindIndex++}`);
-        bindings.push(now);
-        bindings.push(sessionId);
-
-        await env.COUNTDOWN_DB.prepare(
-          `UPDATE sessions SET ${updates.join(", ")} WHERE session_id = ?${bindIndex}`
-        )
-          .bind(...bindings)
-          .run();
+        // Update session using Drizzle
+        await db
+          .update(sessions)
+          .set(updateData)
+          .where(eq(sessions.sessionId, sessionId));
 
         // Record event for audit log
-        await env.COUNTDOWN_DB.prepare(
-          `INSERT INTO events (event_id, session_id, action, payload, occurred_at)
-           VALUES (?1, ?2, ?3, ?4, ?5)`
-        )
-          .bind(
-            crypto.randomUUID(),
-            sessionId,
-            "session.updated",
-            JSON.stringify(payload ?? {}),
-            now
-          )
-          .run();
+        await db.insert(events).values({
+          eventId: crypto.randomUUID(),
+          sessionId,
+          action: "session.updated",
+          payload: JSON.stringify(payload ?? {}),
+          occurredAt: new Date().toISOString(),
+        });
 
         // Fetch updated session
-        const updated = await env.COUNTDOWN_DB.prepare(
-          `SELECT session_id, label, start_time_utc, duration_ms, metadata
-           FROM sessions
-           WHERE session_id = ?1`
-        )
-          .bind(sessionId)
-          .first();
+        const updated = await db
+          .select()
+          .from(sessions)
+          .where(eq(sessions.sessionId, sessionId))
+          .get();
 
         const session: CountdownSession = {
-          sessionId: updated!.session_id as string,
-          label: updated!.label as string,
-          startTimeUtc: updated!.start_time_utc as string,
-          durationMs: updated!.duration_ms as number,
-          metadata: updated!.metadata ? JSON.parse(updated!.metadata as string) : undefined,
+          sessionId: updated!.sessionId,
+          label: updated!.label,
+          startTimeUtc: updated!.startTimeUtc,
+          durationMs: updated!.durationMs,
+          metadata: updated!.metadata ? JSON.parse(updated!.metadata) : undefined,
         };
 
         return json(session);
@@ -247,40 +237,30 @@ export default {
       }
 
       try {
-        // Check if session exists
-        const existing = await env.COUNTDOWN_DB.prepare(
-          `SELECT session_id, label, start_time_utc, duration_ms, metadata
-           FROM sessions
-           WHERE session_id = ?1`
-        )
-          .bind(sessionId)
-          .first();
+        // Check if session exists and get it for audit log
+        const existing = await db
+          .select()
+          .from(sessions)
+          .where(eq(sessions.sessionId, sessionId))
+          .get();
 
         if (!existing) {
           return notFound("Session");
         }
 
-        // Delete the session
-        await env.COUNTDOWN_DB.prepare(
-          `DELETE FROM sessions WHERE session_id = ?1`
-        )
-          .bind(sessionId)
-          .run();
+        // Delete the session using Drizzle
+        await db
+          .delete(sessions)
+          .where(eq(sessions.sessionId, sessionId));
 
         // Record event for audit log
-        const now = new Date().toISOString();
-        await env.COUNTDOWN_DB.prepare(
-          `INSERT INTO events (event_id, session_id, action, payload, occurred_at)
-           VALUES (?1, ?2, ?3, ?4, ?5)`
-        )
-          .bind(
-            crypto.randomUUID(),
-            sessionId,
-            "session.deleted",
-            JSON.stringify(existing),
-            now
-          )
-          .run();
+        await db.insert(events).values({
+          eventId: crypto.randomUUID(),
+          sessionId,
+          action: "session.deleted",
+          payload: JSON.stringify(existing),
+          occurredAt: new Date().toISOString(),
+        });
 
         return json({ deleted: sessionId });
       } catch (error) {
