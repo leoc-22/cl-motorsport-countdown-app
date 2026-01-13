@@ -1,14 +1,13 @@
 {
   "lockfileVersion": 1,
-  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "web",
       "dependencies": {
         "@tanstack/react-router": "^1.139.1",
         "@tanstack/router-plugin": "^1.139.1",
-        "react": "^19.1.1",
-        "react-dom": "^19.1.1",
+        "react": "^19.1.2",
+        "react-dom": "^19.1.2",
       },
       "devDependencies": {
         "@eslint/js": "^9.36.0",
