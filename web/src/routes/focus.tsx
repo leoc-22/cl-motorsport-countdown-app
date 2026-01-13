@@ -106,7 +106,7 @@ function FocusPage() {
 
         {/* Countdown Timer */}
         <div
-          className={`text-8xl md:text-9xl font-mono font-bold ${timerColor} tracking-wider`}
+          className={`text-5xl sm:text-7xl md:text-9xl font-mono font-bold ${timerColor} tracking-wider`}
         >
           {formattedTime}
         </div>
