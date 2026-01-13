@@ -49,6 +49,33 @@ function RecentSessionPage() {
   const formattedTime = formatDuration(Math.max(0, timeState.diffMs))
   const startTime = new Date(recentSession.startTimeUtc)
 
+  // Urgency-based time threshold coloring
+  const getTimerColor = () => {
+    if (timeState.label === 'Completed') {
+      return 'text-accent-green'
+    }
+    if (timeState.label === 'Starts in') {
+      return 'text-subtle'
+    }
+    // Time remaining logic with urgency thresholds
+    const TWO_HOURS = 2 * 60 * 60 * 1000 // 7200000ms
+    const ONE_HOUR = 60 * 60 * 1000 // 3600000ms
+    const FIFTEEN_MINUTES = 15 * 60 * 1000 // 900000ms
+
+    if (timeState.diffMs <= FIFTEEN_MINUTES) {
+      return 'text-red-500'
+    }
+    if (timeState.diffMs <= ONE_HOUR) {
+      return 'text-orange-500'
+    }
+    if (timeState.diffMs <= TWO_HOURS) {
+      return 'text-foreground'
+    }
+    return 'text-foreground'
+  }
+
+  const timerColor = getTimerColor()
+
   return (
     <div className="flex items-center justify-center h-screen bg-background p-8">
       <div className="text-center space-y-8 max-w-4xl w-full">
@@ -63,7 +90,7 @@ function RecentSessionPage() {
         </div>
 
         {/* Countdown Timer */}
-        <div className={`text-8xl md:text-9xl font-mono font-bold ${isCompleted ? 'text-accent-green' : 'text-foreground'} tracking-wider`}>
+        <div className={`text-8xl md:text-9xl font-mono font-bold ${timerColor} tracking-wider`}>
           {formattedTime}
         </div>
 
