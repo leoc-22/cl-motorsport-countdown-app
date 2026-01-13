@@ -1,17 +1,16 @@
 # CL Motorsport's Countdown App
 
-Cloudflare-native countdown scheduler for motorsport (or any time-critical event) series. The project keeps every browser tab in sync by letting a single Durable Object instance manage all countdown sessions, while Cloudflare Pages serves the React UI.
+A Cloudflare-native countdown scheduler for CL Motorsport team.
 
 ## Stack Overview
-- **UI**: Vite + React + TypeScript + Tailwind CSS, deployed through Cloudflare Pages. Tooling runs on Bun 1.2+ while still targeting Node.js 22 for Cloudflare runtime parity.
-- **API**: Cloudflare Worker (modules syntax) routing REST + WebSocket/SSE traffic.
-- **State coordinator**: Single Cloudflare Durable Object responsible for managing all `CountdownSession`s, triggering automatic starts, and broadcasting real-time ticks.
-- **Persistence**: Cloudflare D1 keeps durable snapshots/events. Optional R2 backups for exports.
+- **UI**: React 19 + TanStack Router + TypeScript + Tailwind CSS, built with Vite 7 and deployed through Cloudflare Pages. Package management via Bun 1.2+, targeting Node.js 22 for Cloudflare runtime parity.
+- **API**: Cloudflare Worker (modules syntax) exposing RESTful endpoints for session CRUD.
+- **State coordinator**: Single Cloudflare Durable Object (`CountdownDurableObject`) responsible for managing all `CountdownSession`s with in-memory caching and D1-backed persistence.
+- **Persistence**: Cloudflare D1 stores snapshots (`countdown_state`) and an append-only event log (`events`) for durability and cold-start recovery.
 
 ## Project Layout
 - `web/` – Vite + React + Tailwind frontend that visualizes countdown data and connects to the Worker API.
 - `worker/` – Cloudflare Worker with a `CountdownDurableObject`, REST surface (`/api/sessions/...`), and D1 bindings for snapshots + audit events.
-- `.nvmrc` – pins Node.js 22 for both workspaces.
 
 ## Architecture
 1. User creates/edits countdown sessions via the React UI.
