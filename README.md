@@ -189,6 +189,28 @@ Visit the Cloudflare Pages URL to confirm the UI loads and connects to the Worke
 - **Coordinated releases**: deploy the Worker first (maintains API compatibility), then the Pages build.
 - **Database backups**: `bunx wrangler d1 export countdown-db --remote --output backup.sql` before major changes.
 
+## Troubleshooting
+
+### `wrangler types` fails with migration errors
+
+If you see errors like:
+```
+Cannot apply new_sqlite_classes migration to existing class CountdownDurableObject
+```
+or
+```
+Cannot apply deleted_classes migration to non-existent class ...
+```
+
+This happens when Wrangler's local or remote migration state is out of sync with your `wrangler.jsonc` migrations.
+
+**Solution:**
+1. Clear local Wrangler state: `rm -rf worker/.wrangler`
+2. If the error persists, consolidate your migrations in `wrangler.jsonc`. For a fresh deployment, you can combine multiple migration steps into one (e.g., use `new_sqlite_classes` directly instead of `new_classes` followed by a separate SQLite migration).
+3. Remove any `deleted_classes` migrations that reference classes that were never deployed.
+
+**Important:** Only consolidate migrations if you haven't deployed them to production yet. Once migrations are deployed, they become part of the permanent history.
+
 ## Status
 - [x] Architecture + data model defined
 - [x] UI scaffolded with Tailwind theme
