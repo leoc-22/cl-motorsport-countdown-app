@@ -3,23 +3,27 @@ import { useCountdown } from "../utils/CountdownContext";
 import { useCountdownTimer } from "../hooks/useCountdownTimer";
 import { getTimeState, formatDuration } from "../utils/timeUtils";
 
-export const Route = createFileRoute("/recent")({
-  component: RecentSessionPage,
+export const Route = createFileRoute("/focus")({
+  component: FocusPage,
 });
 
-function RecentSessionPage() {
+function FocusPage() {
   const { sessions, loading, error } = useCountdown();
   const currentTime = useCountdownTimer();
 
-  // Filter out completed sessions and find the one with earliest endTimeUtc
+  // Helper to calculate end time from startTimeUtc + durationMs
+  const getEndTime = (session: (typeof sessions)[0]) =>
+    new Date(new Date(session.startTimeUtc).getTime() + session.durationMs);
+
+  // Filter out completed sessions and find the one with earliest end time
   const activeSessions = sessions.filter(
-    (session) => new Date(session.endTimeUtc) > currentTime
+    (session) => getEndTime(session) > currentTime,
   );
 
   const sessionToFocus =
     activeSessions.length > 0
       ? activeSessions.reduce((earliest, current) => {
-          return new Date(current.endTimeUtc) < new Date(earliest.endTimeUtc)
+          return getEndTime(current) < getEndTime(earliest)
             ? current
             : earliest;
         })
@@ -84,7 +88,7 @@ function RecentSessionPage() {
   const timerColor = getTimerColor();
 
   return (
-    <div className="flex items-center justify-center h-screen bg-background p-8">
+    <div className="flex items-center justify-center h-full bg-background p-8 overflow-hidden">
       <div className="text-center space-y-8 max-w-4xl w-full">
         {/* Session Label */}
         <h1
