@@ -1,4 +1,4 @@
-import { createRootRoute, Link, Outlet } from '@tanstack/react-router'
+import { createRootRoute, Link, Outlet, useRouterState } from '@tanstack/react-router'
 import { CountdownProvider } from '../utils/CountdownContext'
 
 export const Route = createRootRoute({
@@ -6,6 +6,9 @@ export const Route = createRootRoute({
 })
 
 function RootComponent() {
+  const router = useRouterState()
+  const isRecentPage = router.location.pathname === '/recent'
+
   return (
     <CountdownProvider>
       <div className="min-h-screen bg-background text-foreground font-mono">
@@ -36,11 +39,23 @@ function RootComponent() {
               >
                 Configure
               </Link>
+              <Link
+                to="/recent"
+                className="border-b-2 px-6 py-4 text-sm font-medium transition"
+                activeProps={{
+                  className: 'border-accent-blue text-foreground',
+                }}
+                inactiveProps={{
+                  className: 'border-transparent text-subtle hover:text-foreground',
+                }}
+              >
+                Recent Session
+              </Link>
             </nav>
           </div>
         </header>
 
-        <main className="mx-auto max-w-7xl px-6 py-8 lg:px-8">
+        <main className={isRecentPage ? '' : 'mx-auto max-w-7xl px-6 py-8 lg:px-8'}>
           <Outlet />
         </main>
       </div>
