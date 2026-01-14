@@ -18,7 +18,7 @@ export const ActiveTimer = ({ session, currentTime }: ActiveTimerProps) => {
       return "text-subtle";
     }
     // Time remaining logic with urgency thresholds
-    const TWO_HOURS = 2 * 60 * 60 * 1000; // 7200000ms
+    const THREE_HOURS = 3 * 60 * 60 * 1000; // 10800000ms
     const ONE_HOUR = 60 * 60 * 1000; // 3600000ms
     const FIFTEEN_MINUTES = 15 * 60 * 1000; // 900000ms
 
@@ -28,8 +28,8 @@ export const ActiveTimer = ({ session, currentTime }: ActiveTimerProps) => {
     if (timeState.diffMs <= ONE_HOUR) {
       return "text-accent-amber";
     }
-    if (timeState.diffMs <= TWO_HOURS) {
-      return "text-foreground";
+    if (timeState.diffMs <= THREE_HOURS) {
+      return "text-contrast";
     }
     return "text-foreground";
   };

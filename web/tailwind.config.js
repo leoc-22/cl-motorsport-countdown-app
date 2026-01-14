@@ -24,6 +24,7 @@ export default {
         foreground: 'rgb(var(--color-foreground) / <alpha-value>)',
         muted: 'rgb(var(--color-muted) / <alpha-value>)',
         subtle: 'rgb(var(--color-subtle) / <alpha-value>)',
+        contrast: 'rgb(var(--color-contrast) / <alpha-value>)',
         accent: {
           blue: '#3b82f6',
           green: '#10b981',
