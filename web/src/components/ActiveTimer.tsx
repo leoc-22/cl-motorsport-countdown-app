@@ -23,10 +23,10 @@ export const ActiveTimer = ({ session, currentTime }: ActiveTimerProps) => {
     const FIFTEEN_MINUTES = 15 * 60 * 1000; // 900000ms
 
     if (timeState.diffMs <= FIFTEEN_MINUTES) {
-      return "text-red-500";
+      return "text-accent-red";
     }
     if (timeState.diffMs <= ONE_HOUR) {
-      return "text-orange-500";
+      return "text-accent-amber";
     }
     if (timeState.diffMs <= TWO_HOURS) {
       return "text-foreground";
