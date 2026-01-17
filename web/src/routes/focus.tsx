@@ -92,7 +92,7 @@ function FocusPage() {
       <div className="text-center space-y-8 max-w-4xl w-full">
         {/* Session Label */}
         <h1
-          className={`text-6xl md:text-8xl font-bold ${isCompleted ? "line-through text-accent-green" : "text-foreground"}`}
+          className={`text-2xl md:text-4xl font-bold ${isCompleted ? "line-through text-accent-green" : "text-foreground"}`}
         >
           {sessionToFocus.label}
         </h1>
