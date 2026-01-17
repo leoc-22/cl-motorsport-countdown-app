@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useCountdown } from "../utils/CountdownContext";
 import type { CountdownSession } from "../utils/types";
 import {
   utcToLocalDatetimeInput,
   localDatetimeInputToUtc,
   getLocalDatetimeDefault,
+  shouldHideCompletedSession,
 } from "../utils/timeUtils";
 
 export const Route = createFileRoute("/configure")({
@@ -24,6 +25,22 @@ function ConfigureComponent() {
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
+
+  // Filter out sessions that finished more than 2 minutes ago (archived)
+  const { displayedSessions, archivedCount } = useMemo(() => {
+    const now = new Date();
+    const archived = sessions.filter((session) =>
+      shouldHideCompletedSession(session, now),
+    );
+    const active = sessions.filter(
+      (session) => !shouldHideCompletedSession(session, now),
+    );
+    return {
+      displayedSessions: showArchived ? sessions : active,
+      archivedCount: archived.length,
+    };
+  }, [sessions, showArchived]);
 
   const handleAddSession = async (session: {
     label: string;
@@ -90,14 +107,27 @@ function ConfigureComponent() {
       <div className="rounded-xl border border-border bg-background-surface p-8">
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-2xl font-semibold text-foreground">Sessions</h2>
-          <button
-            type="button"
-            onClick={() => setShowAddForm(true)}
-            disabled={saving || showAddForm}
-            className="rounded-lg bg-accent-green px-4 py-2 text-sm font-medium text-white transition hover:bg-accent-green/90 disabled:opacity-50"
-          >
-            + Add Session
-          </button>
+          <div className="flex items-center gap-4">
+            {archivedCount > 0 && (
+              <label className="flex items-center gap-2 text-sm text-muted cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showArchived}
+                  onChange={(e) => setShowArchived(e.target.checked)}
+                  className="h-4 w-4 rounded border-border bg-background-surface text-accent-blue focus:ring-accent-blue"
+                />
+                Show archived ({archivedCount})
+              </label>
+            )}
+            <button
+              type="button"
+              onClick={() => setShowAddForm(true)}
+              disabled={saving || showAddForm}
+              className="rounded-lg bg-accent-green px-4 py-2 text-sm font-medium text-white transition hover:bg-accent-green/90 disabled:opacity-50"
+            >
+              + Add Session
+            </button>
+          </div>
         </div>
 
         <div className="space-y-4">
@@ -109,13 +139,17 @@ function ConfigureComponent() {
             />
           )}
 
-          {sessions.length === 0 && !showAddForm ? (
+          {displayedSessions.length === 0 && !showAddForm ? (
             <p className="text-center text-muted py-8">
-              No sessions yet. Add one to get started.
+              No active sessions. Add one to get started.
             </p>
           ) : (
-            sessions.map((session) =>
-              editingSessionId === session.sessionId ? (
+            displayedSessions.map((session) => {
+              const isArchived = shouldHideCompletedSession(
+                session,
+                new Date(),
+              );
+              return editingSessionId === session.sessionId ? (
                 <SessionEditForm
                   key={session.sessionId}
                   session={session}
@@ -130,9 +164,10 @@ function ConfigureComponent() {
                   onEdit={() => setEditingSessionId(session.sessionId)}
                   onDelete={() => handleDeleteSession(session.sessionId)}
                   disabled={saving}
+                  isArchived={isArchived}
                 />
-              ),
-            )
+              );
+            })
           )}
         </div>
       </div>
@@ -145,20 +180,42 @@ function SessionCard({
   onEdit,
   onDelete,
   disabled,
+  isArchived,
 }: {
   session: CountdownSession;
   onEdit: () => void;
   onDelete: () => void;
   disabled: boolean;
+  isArchived: boolean;
 }) {
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+
   const endTime = new Date(
     new Date(session.startTimeUtc).getTime() + session.durationMs,
   );
 
+  const handleDeleteClick = () => {
+    if (confirmingDelete) {
+      onDelete();
+      setConfirmingDelete(false);
+    } else {
+      setConfirmingDelete(true);
+    }
+  };
+
   return (
-    <div className="rounded-lg border border-border bg-background-elevated p-5">
+    <div
+      className={`rounded-lg border p-5 ${isArchived ? "border-border/50 bg-background-elevated/50 opacity-60" : "border-border bg-background-elevated"}`}
+    >
       <div className="mb-4 flex items-start justify-between gap-4">
-        <p className="font-semibold text-foreground">{session.label}</p>
+        <div className="flex items-center gap-2">
+          <p className="font-semibold text-foreground">{session.label}</p>
+          {isArchived && (
+            <span className="rounded-full bg-muted/20 px-2 py-0.5 text-xs text-muted">
+              Archived
+            </span>
+          )}
+        </div>
         <div className="flex gap-2">
           <button
             type="button"
@@ -168,14 +225,35 @@ function SessionCard({
           >
             Edit
           </button>
-          <button
-            type="button"
-            onClick={onDelete}
-            disabled={disabled}
-            className="rounded-md border border-accent-red bg-accent-red/10 px-3 py-1.5 text-sm font-medium text-accent-red transition hover:bg-accent-red/20 disabled:opacity-50"
-          >
-            Delete
-          </button>
+          {confirmingDelete ? (
+            <>
+              <button
+                type="button"
+                onClick={handleDeleteClick}
+                disabled={disabled}
+                className="rounded-md border border-accent-red bg-accent-red px-3 py-1.5 text-sm font-medium text-white transition hover:bg-accent-red/90 disabled:opacity-50"
+              >
+                Confirm
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmingDelete(false)}
+                disabled={disabled}
+                className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-muted transition hover:bg-background-surface disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={handleDeleteClick}
+              disabled={disabled}
+              className="rounded-md border border-accent-red bg-accent-red/10 px-3 py-1.5 text-sm font-medium text-accent-red transition hover:bg-accent-red/20 disabled:opacity-50"
+            >
+              Delete
+            </button>
+          )}
         </div>
       </div>
       <div className="space-y-1.5 text-sm text-subtle tabular-nums">
