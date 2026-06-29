@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useCountdown } from "../utils/CountdownContext";
 import { useCountdownTimer } from "../hooks/useCountdownTimer";
 import { getTimeState, formatDuration } from "../utils/timeUtils";
@@ -14,6 +15,73 @@ const focusDateTimeFormatter = new Intl.DateTimeFormat("en-US", {
   minute: "2-digit",
   hourCycle: "h23",
 });
+
+function FullscreenIcon({ isFullscreen }: { isFullscreen: boolean }) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      className="h-6 w-6"
+      fill="currentColor"
+    >
+      <path
+        d={
+          isFullscreen
+            ? "M5 16h3v3h2v-5H5v2Zm3-8H5v2h5V5H8v3Zm6 11h2v-3h3v-2h-5v5Zm2-11V5h-2v5h5V8h-3Z"
+            : "M7 14H5v5h5v-2H7v-3Zm-2-4h2V7h3V5H5v5Zm12 7h-3v2h5v-5h-2v3Zm-3-12v2h3v3h2V5h-5Z"
+        }
+      />
+    </svg>
+  );
+}
+
+function FocusFullscreenFrame({ children }: { children: ReactNode }) {
+  const frameRef = useRef<HTMLDivElement>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const syncFullscreenState = () => {
+      setIsFullscreen(document.fullscreenElement === frameRef.current);
+    };
+
+    document.addEventListener("fullscreenchange", syncFullscreenState);
+    return () =>
+      document.removeEventListener("fullscreenchange", syncFullscreenState);
+  }, []);
+
+  const toggleFullscreen = async () => {
+    try {
+      if (document.fullscreenElement === frameRef.current) {
+        await document.exitFullscreen();
+        return;
+      }
+
+      await frameRef.current?.requestFullscreen();
+    } catch {
+      setIsFullscreen(false);
+    }
+  };
+
+  return (
+    <div
+      ref={frameRef}
+      className="relative flex h-full items-center justify-center overflow-hidden bg-background p-8"
+    >
+      <button
+        type="button"
+        onClick={() => void toggleFullscreen()}
+        aria-label={isFullscreen ? "Exit full screen" : "Enter full screen"}
+        aria-pressed={isFullscreen}
+        title={isFullscreen ? "Exit full screen" : "Enter full screen"}
+        className="absolute right-4 top-4 z-10 inline-flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-background-surface text-muted-foreground transition hover:border-border-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-blue focus-visible:ring-offset-2 focus-visible:ring-offset-background md:right-6 md:top-6"
+      >
+        <FullscreenIcon isFullscreen={isFullscreen} />
+      </button>
+
+      {children}
+    </div>
+  );
+}
 
 function FocusPage() {
   const { sessions, loading, error } = useCountdown();
@@ -39,27 +107,27 @@ function FocusPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <FocusFullscreenFrame>
         <div className="text-xl text-muted-foreground">Loading...</div>
-      </div>
+      </FocusFullscreenFrame>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <FocusFullscreenFrame>
         <div className="text-xl text-destructive">Error: {error}</div>
-      </div>
+      </FocusFullscreenFrame>
     );
   }
 
   if (!sessionToFocus) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <FocusFullscreenFrame>
         <div className="text-2xl text-muted-foreground">
           No sessions available
         </div>
-      </div>
+      </FocusFullscreenFrame>
     );
   }
 
@@ -106,7 +174,7 @@ function FocusPage() {
   const timerColor = getTimerColor();
 
   return (
-    <div className="relative flex items-center justify-center h-full bg-background p-8 overflow-hidden">
+    <FocusFullscreenFrame>
       <div className="-translate-y-24 text-center space-y-8 max-w-4xl w-full">
         {/* Session Label */}
         <h1
@@ -149,6 +217,6 @@ function FocusPage() {
           ))}
         </div>
       )}
-    </div>
+    </FocusFullscreenFrame>
   );
 }
