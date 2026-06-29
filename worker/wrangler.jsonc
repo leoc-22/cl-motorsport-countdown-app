@@ -25,16 +25,14 @@
         "CountdownGroupDurableObject"
       ],
       "tag": "v3"
+    },
+    {
+      "deleted_classes": [
+        "CountdownDurableObject"
+      ],
+      "tag": "v4"
     }
   ],
-  "durable_objects": {
-    "bindings": [
-      {
-        "class_name": "CountdownDurableObject",
-        "name": "COUNTDOWN_DO"
-      }
-    ]
-  },
   "d1_databases": [
     {
       "binding": "COUNTDOWN_DB",
