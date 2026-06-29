@@ -6,7 +6,7 @@
   "packageManager": "bun@1.2.3",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && tsc -b",
+    "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
