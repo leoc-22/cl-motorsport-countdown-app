@@ -26,6 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: Development
     env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_PAGES_PROJECT_NAME: ${{ secrets.CLOUDFLARE_PAGES_PROJECT_NAME }}
       VITE_API_URL: ${{ secrets.VITE_API_URL }}
@@ -58,6 +59,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: Production
     env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_PAGES_PROJECT_NAME: ${{ secrets.CLOUDFLARE_PAGES_PROJECT_NAME }}
       VITE_API_URL: ${{ secrets.VITE_API_URL }}
