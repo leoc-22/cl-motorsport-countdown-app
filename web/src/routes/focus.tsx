@@ -68,19 +68,15 @@ function FocusPage() {
   const formattedTime = formatDuration(Math.max(0, timeState.diffMs));
   const startTime = new Date(sessionToFocus.startTimeUtc);
   const focusedStartTime = startTime.getTime();
-  const nextSession = sessions
+  const nextSessions = sessions
     .filter(
       (session) => Date.parse(session.startTimeUtc) > focusedStartTime,
     )
-    .reduce<(typeof sessions)[0] | null>((next, session) => {
-      if (
-        !next ||
-        Date.parse(session.startTimeUtc) < Date.parse(next.startTimeUtc)
-      ) {
-        return session;
-      }
-      return next;
-    }, null);
+    .sort(
+      (a, b) =>
+        Date.parse(a.startTimeUtc) - Date.parse(b.startTimeUtc),
+    )
+    .slice(0, 3);
 
   // Urgency-based time threshold coloring
   const getTimerColor = () => {
@@ -140,12 +136,17 @@ function FocusPage() {
         </div>
       </div>
 
-      {nextSession && (
-        <div className="absolute bottom-6 left-1/2 w-full -translate-x-1/2 px-8 text-center text-sm text-subtle md:text-base">
-          Next: {nextSession.label} ·{" "}
-          {focusDateTimeFormatter.format(
-            new Date(nextSession.startTimeUtc),
-          )}
+      {nextSessions.length > 0 && (
+        <div className="absolute bottom-6 left-1/2 w-full -translate-x-1/2 px-8 text-center text-sm text-foreground md:text-base">
+          <p className="mb-1 font-medium">Next:</p>
+          {nextSessions.map((session) => (
+            <p key={session.sessionId}>
+              {session.label} ·{" "}
+              {focusDateTimeFormatter.format(
+                new Date(session.startTimeUtc),
+              )}
+            </p>
+          ))}
         </div>
       )}
     </div>
