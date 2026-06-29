@@ -6,6 +6,7 @@ import {
   utcToLocalDatetimeInput,
   localDatetimeInputToUtc,
   getLocalDatetimeDefault,
+  intlCache,
   shouldHideCompletedSession,
 } from "../utils/timeUtils";
 
@@ -264,11 +265,11 @@ function SessionCard({
       <div className="space-y-1.5 text-sm text-subtle tabular-nums">
         <p>
           <span className="inline-block w-16">Start:</span>
-          {new Date(session.startTimeUtc).toLocaleString()}
+          {intlCache.format(new Date(session.startTimeUtc))}
         </p>
         <p>
           <span className="inline-block w-16">End:</span>
-          {endTime.toLocaleString()}
+          {intlCache.format(endTime)}
         </p>
         <p className="text-muted">
           {Math.floor(session.durationMs / 60000)} min

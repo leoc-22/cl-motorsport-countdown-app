@@ -117,9 +117,9 @@ function FocusPage() {
           {startTime.toLocaleString("en-US", {
             month: "short",
             day: "numeric",
-            hour: "numeric",
+            hour: "2-digit",
             minute: "2-digit",
-            hour12: true,
+            hourCycle: "h23",
           })}
         </div>
       </div>
