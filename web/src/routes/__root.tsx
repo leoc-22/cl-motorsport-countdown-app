@@ -17,9 +17,11 @@ function RootComponent() {
   return (
     <CountdownProvider>
       <div
-        className={`bg-background text-foreground font-mono ${isFocusPage ? "h-screen overflow-hidden" : "min-h-screen"}`}
+        className={`bg-background text-foreground font-mono ${isFocusPage ? "fixed inset-0 flex flex-col overflow-hidden" : "min-h-screen"}`}
       >
-        <header className="border-b border-border">
+        <header
+          className={`border-b border-border ${isFocusPage ? "shrink-0" : ""}`}
+        >
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
             <nav className="flex gap-2 font-sans">
               <Link
@@ -68,7 +70,7 @@ function RootComponent() {
         <main
           className={
             isFocusPage
-              ? "h-[calc(100vh-57px)]"
+              ? "min-h-0 flex-1 overflow-hidden"
               : "mx-auto max-w-7xl px-6 py-8 lg:px-8"
           }
         >

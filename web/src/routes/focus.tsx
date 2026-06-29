@@ -7,6 +7,14 @@ export const Route = createFileRoute("/focus")({
   component: FocusPage,
 });
 
+const focusDateTimeFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+});
+
 function FocusPage() {
   const { sessions, loading, error } = useCountdown();
   const currentTime = useCountdownTimer();
@@ -59,6 +67,16 @@ function FocusPage() {
   const isCompleted = timeState.label === "Completed";
   const formattedTime = formatDuration(Math.max(0, timeState.diffMs));
   const startTime = new Date(sessionToFocus.startTimeUtc);
+  const focusedStartTime = startTime.getTime();
+  const nextSessions = sessions
+    .filter(
+      (session) => Date.parse(session.startTimeUtc) > focusedStartTime,
+    )
+    .sort(
+      (a, b) =>
+        Date.parse(a.startTimeUtc) - Date.parse(b.startTimeUtc),
+    )
+    .slice(0, 3);
 
   // Urgency-based time threshold coloring
   const getTimerColor = () => {
@@ -88,8 +106,8 @@ function FocusPage() {
   const timerColor = getTimerColor();
 
   return (
-    <div className="flex items-center justify-center h-full bg-background p-8 overflow-hidden">
-      <div className="text-center space-y-8 max-w-4xl w-full">
+    <div className="relative flex items-center justify-center h-full bg-background p-8 overflow-hidden">
+      <div className="-translate-y-24 text-center space-y-8 max-w-4xl w-full">
         {/* Session Label */}
         <h1
           className={`text-2xl md:text-4xl font-bold ${isCompleted ? "line-through text-accent-green" : "text-foreground"}`}
@@ -114,15 +132,23 @@ function FocusPage() {
         {/* Start Time */}
         <div className="text-xl md:text-2xl text-muted-foreground">
           {isCompleted ? "Started" : "Starts"} at{" "}
-          {startTime.toLocaleString("en-US", {
-            month: "short",
-            day: "numeric",
-            hour: "numeric",
-            minute: "2-digit",
-            hour12: true,
-          })}
+          {focusDateTimeFormatter.format(startTime)}
         </div>
       </div>
+
+      {nextSessions.length > 0 && (
+        <div className="absolute bottom-6 left-1/2 w-full -translate-x-1/2 px-8 text-center text-sm text-foreground md:text-base">
+          <p className="mb-1 font-medium">Next:</p>
+          {nextSessions.map((session) => (
+            <p key={session.sessionId}>
+              {session.label} ·{" "}
+              {focusDateTimeFormatter.format(
+                new Date(session.startTimeUtc),
+              )}
+            </p>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

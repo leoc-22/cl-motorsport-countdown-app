@@ -63,6 +63,7 @@ export const shouldHideCompletedSession = (
 export const intlCache = new Intl.DateTimeFormat("en-US", {
   dateStyle: "medium",
   timeStyle: "short",
+  hourCycle: "h23",
 });
 
 /**
