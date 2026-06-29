@@ -22,11 +22,22 @@ function RootComponent() {
         <header
           className={`border-b border-border ${isFocusPage ? "shrink-0" : ""}`}
         >
-          <div className="mx-auto max-w-7xl px-6 lg:px-8">
-            <nav className="flex gap-2 font-sans">
+          <div className="mx-auto flex max-w-7xl flex-col px-6 sm:flex-row sm:items-center sm:justify-between lg:px-8">
+            <Link
+              to="/"
+              aria-label="CL Motorsport live view"
+              className="w-fit py-3 sm:py-0"
+            >
+              <img
+                src="/cl-motorsport-logo-orange.png"
+                alt="CL Motorsport Formula Team"
+                className="h-8 w-auto"
+              />
+            </Link>
+            <nav className="flex gap-1 font-sans sm:gap-2">
               <Link
                 to="/"
-                className="border-b-2 px-6 py-4 text-sm font-medium transition"
+                className="border-b-2 px-3 py-4 text-sm font-medium transition sm:px-5 lg:px-6"
                 activeProps={{
                   className: "border-accent-blue text-foreground",
                 }}
@@ -39,7 +50,7 @@ function RootComponent() {
               </Link>
               <Link
                 to="/focus"
-                className="border-b-2 px-6 py-4 text-sm font-medium transition"
+                className="border-b-2 px-3 py-4 text-sm font-medium transition sm:px-5 lg:px-6"
                 activeProps={{
                   className: "border-accent-blue text-foreground",
                 }}
@@ -52,7 +63,7 @@ function RootComponent() {
               </Link>
               <Link
                 to="/configure"
-                className="border-b-2 px-6 py-4 text-sm font-medium transition"
+                className="border-b-2 px-3 py-4 text-sm font-medium transition sm:px-5 lg:px-6"
                 activeProps={{
                   className: "border-accent-blue text-foreground",
                 }}
