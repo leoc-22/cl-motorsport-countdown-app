@@ -79,9 +79,6 @@ out
 # Wrangler
 .wrangler/
 
-# TanStack Router auto-generated files
-web/src/routeTree.gen.ts
-
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
