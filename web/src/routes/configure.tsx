@@ -37,7 +37,12 @@ function ConfigureComponent() {
       (session) => !shouldHideCompletedSession(session, now),
     );
     return {
-      displayedSessions: showArchived ? sessions : active,
+      displayedSessions: showArchived
+        ? [...sessions].sort(
+            (a, b) =>
+              Date.parse(b.startTimeUtc) - Date.parse(a.startTimeUtc),
+          )
+        : active,
       archivedCount: archived.length,
     };
   }, [sessions, showArchived]);
