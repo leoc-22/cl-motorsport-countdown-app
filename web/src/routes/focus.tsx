@@ -107,7 +107,7 @@ function FocusPage() {
 
   return (
     <div className="relative flex items-center justify-center h-full bg-background p-8 overflow-hidden">
-      <div className="text-center space-y-8 max-w-4xl w-full">
+      <div className="-translate-y-24 text-center space-y-8 max-w-4xl w-full">
         {/* Session Label */}
         <h1
           className={`text-2xl md:text-4xl font-bold ${isCompleted ? "line-through text-accent-green" : "text-foreground"}`}
