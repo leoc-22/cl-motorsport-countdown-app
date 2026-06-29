@@ -7,6 +7,14 @@ export const Route = createFileRoute("/focus")({
   component: FocusPage,
 });
 
+const focusDateTimeFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+});
+
 function FocusPage() {
   const { sessions, loading, error } = useCountdown();
   const currentTime = useCountdownTimer();
@@ -59,6 +67,20 @@ function FocusPage() {
   const isCompleted = timeState.label === "Completed";
   const formattedTime = formatDuration(Math.max(0, timeState.diffMs));
   const startTime = new Date(sessionToFocus.startTimeUtc);
+  const focusedStartTime = startTime.getTime();
+  const nextSession = sessions
+    .filter(
+      (session) => Date.parse(session.startTimeUtc) > focusedStartTime,
+    )
+    .reduce<(typeof sessions)[0] | null>((next, session) => {
+      if (
+        !next ||
+        Date.parse(session.startTimeUtc) < Date.parse(next.startTimeUtc)
+      ) {
+        return session;
+      }
+      return next;
+    }, null);
 
   // Urgency-based time threshold coloring
   const getTimerColor = () => {
@@ -88,7 +110,7 @@ function FocusPage() {
   const timerColor = getTimerColor();
 
   return (
-    <div className="flex items-center justify-center h-full bg-background p-8 overflow-hidden">
+    <div className="relative flex items-center justify-center h-full bg-background p-8 overflow-hidden">
       <div className="text-center space-y-8 max-w-4xl w-full">
         {/* Session Label */}
         <h1
@@ -114,15 +136,18 @@ function FocusPage() {
         {/* Start Time */}
         <div className="text-xl md:text-2xl text-muted-foreground">
           {isCompleted ? "Started" : "Starts"} at{" "}
-          {startTime.toLocaleString("en-US", {
-            month: "short",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-            hourCycle: "h23",
-          })}
+          {focusDateTimeFormatter.format(startTime)}
         </div>
       </div>
+
+      {nextSession && (
+        <div className="absolute bottom-6 left-1/2 w-full -translate-x-1/2 px-8 text-center text-sm text-subtle md:text-base">
+          Next: {nextSession.label} ·{" "}
+          {focusDateTimeFormatter.format(
+            new Date(nextSession.startTimeUtc),
+          )}
+        </div>
+      )}
     </div>
   );
 }
