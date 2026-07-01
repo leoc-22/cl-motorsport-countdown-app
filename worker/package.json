@@ -10,7 +10,9 @@
     "deploy": "wrangler deploy",
     "dev": "wrangler dev",
     "start": "wrangler dev",
-    "cf-typegen": "wrangler types"
+    "cf-typegen": "wrangler types",
+    "db:migrate:local": "wrangler d1 migrations apply countdown-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply countdown-db --remote"
   },
   "devDependencies": {
     "typescript": "^5.5.2",

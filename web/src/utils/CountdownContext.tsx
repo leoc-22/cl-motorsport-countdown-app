@@ -53,7 +53,12 @@ export const CountdownProvider = ({ children }: { children: ReactNode }) => {
   const updateSession = useCallback(
     async (sessionId: string, updates: Partial<CountdownSession>) => {
       try {
-        await api.updateSession(sessionId, updates)
+        const current = sessions.find((session) => session.sessionId === sessionId)
+        if (!current) throw new Error('Session is no longer available')
+        await api.updateSession(sessionId, {
+          ...updates,
+          expectedVersion: current.version,
+        })
         await refreshSessions()
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to update session'
@@ -61,13 +66,15 @@ export const CountdownProvider = ({ children }: { children: ReactNode }) => {
         throw err
       }
     },
-    [refreshSessions],
+    [refreshSessions, sessions],
   )
 
   const deleteSession = useCallback(
     async (sessionId: string) => {
       try {
-        await api.deleteSession(sessionId)
+        const current = sessions.find((session) => session.sessionId === sessionId)
+        if (!current) throw new Error('Session is no longer available')
+        await api.deleteSession(sessionId, current.version)
         await refreshSessions()
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Failed to delete session'
@@ -75,7 +82,7 @@ export const CountdownProvider = ({ children }: { children: ReactNode }) => {
         throw err
       }
     },
-    [refreshSessions],
+    [refreshSessions, sessions],
   )
 
   useEffect(() => {

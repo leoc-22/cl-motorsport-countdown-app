@@ -36,15 +36,19 @@ export const api = {
     }),
 
   // Update a session
-  updateSession: (sessionId: string, updates: Partial<CountdownSession>) =>
+  updateSession: (
+    sessionId: string,
+    updates: Partial<CountdownSession> & { expectedVersion: number },
+  ) =>
     request<CountdownSession>(`/api/sessions/${encodeURIComponent(sessionId)}`, {
       method: 'PATCH',
       body: JSON.stringify(updates),
     }),
 
   // Delete a session
-  deleteSession: (sessionId: string) =>
+  deleteSession: (sessionId: string, expectedVersion: number) =>
     request<{ deleted: string }>(`/api/sessions/${encodeURIComponent(sessionId)}`, {
       method: 'DELETE',
+      body: JSON.stringify({ expectedVersion }),
     }),
 }

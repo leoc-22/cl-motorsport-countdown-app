@@ -17,7 +17,7 @@ A Cloudflare-native countdown timer application for motorsport events, built wit
 - Session status tracking (scheduled, running, complete, canceled)
 - Configuration interface for managing countdown groups and sessions
 - Timezone-aware scheduling
-- Designed to integrate with Cloudflare Durable Objects for multi-tab synchronization
+- D1-backed session persistence with conflict detection for concurrent edits
 
 ## Project Structure
 

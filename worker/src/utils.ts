@@ -37,6 +37,14 @@ export const notFound = (resource = "Resource") =>
     { status: 404 },
   );
 
+export const conflict = (message: string) =>
+  json(
+    {
+      error: message,
+    },
+    { status: 409 },
+  );
+
 export const health = () =>
   json({
     status: "ok",
