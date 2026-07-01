@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useCountdown } from "../utils/CountdownContext";
+import { useCountdown } from "../hooks/useCountdown";
 import { useCountdownTimer } from "../hooks/useCountdownTimer";
 import { ActiveTimer } from "../components/ActiveTimer";
 import { shouldHideCompletedSession } from "../utils/timeUtils";

@@ -1,19 +1,8 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import type { ReactNode } from 'react'
 import type { CountdownSession } from './types'
 import { api } from './api'
-
-type CountdownContextType = {
-  sessions: CountdownSession[]
-  loading: boolean
-  error: string | null
-  refreshSessions: () => Promise<void>
-  createSession: (session: { label: string; startTimeUtc: string; durationMs: number }) => Promise<CountdownSession>
-  updateSession: (sessionId: string, updates: Partial<CountdownSession>) => Promise<void>
-  deleteSession: (sessionId: string) => Promise<void>
-}
-
-const CountdownContext = createContext<CountdownContextType | undefined>(undefined)
+import { CountdownContext } from './countdown-context'
 
 export const CountdownProvider = ({ children }: { children: ReactNode }) => {
   const [sessions, setSessions] = useState<CountdownSession[]>([])
@@ -104,12 +93,4 @@ export const CountdownProvider = ({ children }: { children: ReactNode }) => {
       {children}
     </CountdownContext.Provider>
   )
-}
-
-export const useCountdown = () => {
-  const context = useContext(CountdownContext)
-  if (context === undefined) {
-    throw new Error('useCountdown must be used within a CountdownProvider')
-  }
-  return context
 }
