@@ -4,17 +4,26 @@ export type CountdownSession = {
   startTimeUtc: string;
   durationMs: number;
   metadata?: Record<string, unknown>;
-};
-
-export type CountdownState = {
-  sessions: CountdownSession[];
-  activeSessionId: string | null;
   version: number;
   createdAt: string;
   updatedAt: string;
 };
 
+export type CountdownSessionRow = {
+  session_id: string;
+  label: string;
+  start_time_utc: string;
+  duration_ms: number;
+  metadata: string | null;
+  version: number;
+  created_at: string;
+  updated_at: string;
+};
+
 export type CountdownEnv = {
-  COUNTDOWN_DO: DurableObjectNamespace;
   COUNTDOWN_DB: D1Database;
+  ASSETS: Fetcher;
+  TEAM_DOMAIN?: string;
+  POLICY_AUD?: string;
+  AUTH_DISABLED?: string;
 };

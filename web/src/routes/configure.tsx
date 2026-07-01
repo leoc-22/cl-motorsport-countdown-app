@@ -9,12 +9,15 @@ import {
   intlCache,
   shouldHideCompletedSession,
 } from "../utils/timeUtils";
+import { api } from "../utils/api";
 
 export const Route = createFileRoute("/configure")({
+  loader: () => api.getAdminIdentity(),
   component: ConfigureComponent,
 });
 
 function ConfigureComponent() {
+  const identity = Route.useLoaderData();
   const {
     sessions,
     loading,
@@ -112,7 +115,12 @@ function ConfigureComponent() {
 
       <div className="rounded-xl border border-border bg-background-surface p-8">
         <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-2xl font-semibold text-foreground">Sessions</h2>
+          <div>
+            <h2 className="text-2xl font-semibold text-foreground">Sessions</h2>
+            <p className="mt-1 text-xs text-muted">
+              Signed in as {identity.email}
+            </p>
+          </div>
           <div className="flex items-center gap-4">
             {archivedCount > 0 && (
               <label className="flex items-center gap-2 text-sm text-muted cursor-pointer">

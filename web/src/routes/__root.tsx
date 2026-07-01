@@ -61,19 +61,16 @@ function RootComponent() {
               >
                 Focus Mode
               </Link>
-              <Link
-                to="/configure"
-                className="border-b-2 px-3 py-4 text-sm font-medium transition sm:px-5 lg:px-6"
-                activeProps={{
-                  className: "border-accent-blue text-foreground",
-                }}
-                inactiveProps={{
-                  className:
-                    "border-transparent text-subtle hover:text-foreground",
-                }}
+              <a
+                href="/configure"
+                className={`border-b-2 px-3 py-4 text-sm font-medium transition sm:px-5 lg:px-6 ${
+                  router.location.pathname === "/configure"
+                    ? "border-accent-blue text-foreground"
+                    : "border-transparent text-subtle hover:text-foreground"
+                }`}
               >
                 Configure
-              </Link>
+              </a>
             </nav>
           </div>
         </header>

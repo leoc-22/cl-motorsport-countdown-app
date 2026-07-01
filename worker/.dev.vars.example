@@ -1,0 +1,6 @@
+# Local development only. The bypass is accepted only on localhost.
+AUTH_DISABLED=true
+
+# Production values come from the Cloudflare Access application.
+# TEAM_DOMAIN=https://your-team.cloudflareaccess.com
+# POLICY_AUD=your-access-application-audience-tag
