@@ -3,8 +3,8 @@
 A Cloudflare-native countdown scheduler for CL Motorsport team.
 
 ## Stack Overview
-- **UI**: React 19 + TanStack Router + TypeScript + Tailwind CSS, built with Vite 7 and deployed through Cloudflare Pages. Package management via Bun 1.2+, targeting Node.js 22 for Cloudflare runtime parity.
-- **API**: Cloudflare Worker (modules syntax) exposing RESTful endpoints for session CRUD.
+- **UI**: React 19 + TanStack Router + TypeScript + Tailwind CSS, built with Vite 7 and served by Cloudflare Workers Static Assets.
+- **API**: Cloudflare Worker exposing public reads and Cloudflare Access-protected configuration mutations.
 - **Persistence**: Cloudflare D1 is the source of truth, with one row per countdown session and optimistic version checks for concurrent updates.
 
 ## Project Layout
@@ -12,13 +12,15 @@ A Cloudflare-native countdown scheduler for CL Motorsport team.
 - `worker/` – Cloudflare Worker exposing `/api/sessions/...` and reading/writing D1 directly.
 
 ## Architecture
-1. User creates/edits countdown sessions via the React UI.
-2. The UI calls the Worker HTTP API.
-3. The Worker validates requests and executes row-oriented SQL against D1.
-4. Updates and deletes include the last-read row version. D1 applies the mutation only when that version still matches, returning `409 Conflict` for stale clients.
+1. The Worker serves the React SPA and HTTP API from one origin.
+2. Live and focus views read countdown sessions from the public API.
+3. Cloudflare Access gates `/configure` and `/configure/api/*`; the Worker also validates the Access JWT before every mutation.
+4. The Worker validates requests and executes row-oriented SQL against D1.
+5. Updates and deletes include the last-read row version. D1 applies the mutation only when that version still matches, returning `409 Conflict` for stale clients.
 
 ```
-Pages (React UI) ──HTTP──▶ Worker API ──SQL──▶ D1
+Worker Static Assets (React UI) ──▶ Worker API ──SQL──▶ D1
+                Cloudflare Access ──────▲
 ```
 
 ## Data Model
@@ -66,6 +68,7 @@ cd worker
 bun install
 bunx wrangler d1 create countdown-db --binding COUNTDOWN_DB   # once per account
 bun run db:migrate:local
+cp .dev.vars.example .dev.vars
 bun run dev
 ```
 
@@ -74,15 +77,16 @@ bun run dev
 | --- | --- | --- |
 | `GET` | `/health` | Simple readiness check. |
 | `GET` | `/api/sessions` | List all sessions. |
-| `POST` | `/api/sessions` | Create a new session. Body: `{ "label": "Name", "startTimeUtc": "...", "durationMs": 1800000 }`. |
 | `GET` | `/api/sessions/:sessionId` | Get a specific session. |
-| `PATCH` | `/api/sessions/:sessionId` | Update a session. Body must include `expectedVersion`. |
-| `DELETE` | `/api/sessions/:sessionId` | Delete a session. Body must include `expectedVersion`. |
+| `GET` | `/configure/api/me` | Return the authenticated Access identity. |
+| `POST` | `/configure/api/sessions` | Create a session. Requires Cloudflare Access. |
+| `PATCH` | `/configure/api/sessions/:sessionId` | Update a session. Requires Access and `expectedVersion`. |
+| `DELETE` | `/configure/api/sessions/:sessionId` | Delete a session. Requires Access and `expectedVersion`. |
 
 Example:
 ```bash
 # Create a session
-curl -X POST http://localhost:8787/api/sessions \
+curl -X POST http://localhost:8787/configure/api/sessions \
   -H "content-type: application/json" \
   -d '{"label":"Warm-up","startTimeUtc":"2026-01-01T13:00:00.000Z","durationMs":1800000}'
 
@@ -102,7 +106,7 @@ Migration `0001_normalize_sessions.sql` also imports sessions from the legacy `c
 ## Deployment Guide (Cloudflare)
 
 ### 1. Prerequisites
-- Cloudflare account with access to Workers, D1, and Pages.
+- Cloudflare account with access to Workers, D1, and Zero Trust Access.
 - [Bun 1.2+](https://bun.sh) installed locally (`curl -fsSL https://bun.sh/install | bash`).
 - Logged in with Wrangler: `bunx wrangler login` (opens a browser, stores OAuth token locally).
 - Verify access: `bunx wrangler whoami` should print the target account ID.
@@ -120,31 +124,39 @@ Migration `0001_normalize_sessions.sql` also imports sessions from the legacy `c
    bun run db:migrate:remote
    ```
 
-### 3. Deploy the Worker API
+### 3. Configure Cloudflare Access
+
+1. In **Zero Trust → Integrations → Identity providers**, add Google.
+2. In **Access controls → Applications**, add a self-hosted application for the deployed app hostname with the path `configure`.
+3. Set the application session to the desired duration, such as 30 days.
+4. Add an Allow policy containing only the administrators' email addresses.
+5. Copy the application audience tag and your team domain, then store them as Worker secrets:
+
 ```bash
 cd worker
-bun install
-bun run deploy          # alias for `wrangler deploy`
+bunx wrangler secret put TEAM_DOMAIN
+# Enter https://<your-team>.cloudflareaccess.com
+
+bunx wrangler secret put POLICY_AUD
+# Enter the Access application's AUD tag
 ```
-Use `bunx wrangler tail` to stream Worker logs after deploy.
 
-### 4. Deploy the React UI via Cloudflare Pages
+The single `/configure` Access application also covers `/configure/api/*`.
+The Worker independently verifies the JWT signature, issuer, audience, and expiry.
+Do not set `AUTH_DISABLED` in Cloudflare; it is a localhost-only development switch.
 
-**Manual deploy (recommended for initial setup)**
+### 4. Build and deploy the application
 ```bash
 cd web
 bun install
-VITE_API_URL=https://countdown-worker.<your-subdomain>.workers.dev bun run build
-bunx wrangler pages deploy dist --project-name <your-pages-project>
-```
-- Replace `<your-pages-project>` with your Pages project name (created on first run if it doesn't exist).
-- Set `VITE_API_URL` to your deployed Worker URL so the frontend knows where to send API requests.
+bun run build
 
-**Dashboard-driven deploy (CI alternative)**
-1. Create a Pages project in the Cloudflare dashboard pointing at your repository.
-2. Set root directory to `web/`, build command to `bun run build`, and output directory to `dist`.
-3. Add environment variable `VITE_API_URL` set to your Worker URL.
-4. Pushes to the production branch trigger automatic builds.
+cd ../worker
+bun install
+bun run deploy
+```
+The Worker deploy includes `web/dist` as static assets. Use `bunx wrangler tail`
+to stream Worker logs after deployment.
 
 ### 5. Post-deployment verification
 ```bash
@@ -152,20 +164,15 @@ bunx wrangler pages deploy dist --project-name <your-pages-project>
 curl https://<worker-domain>/health
 # Expected: { "status": "ok" }
 
-# Create a test session
-curl -X POST https://<worker-domain>/api/sessions \
-  -H 'content-type: application/json' \
-  -d '{"label":"Test","startTimeUtc":"2026-01-01T00:00:00Z","durationMs":3600000}'
-
 # List sessions
 curl https://<worker-domain>/api/sessions
 ```
-Visit the Cloudflare Pages URL to confirm the UI loads and connects to the Worker.
+Visit `/configure` in a browser. Cloudflare should require Google sign-in before
+serving the route, and the page should show the authenticated email address.
 
 ### 6. Rolling updates & maintenance
-- **Worker updates**: re-run `bun run deploy` from `worker/` after code changes.
-- **Frontend updates**: rebuild and redeploy via `wrangler pages deploy` or push to trigger dashboard CI.
-- **Coordinated releases**: deploy the Worker first (maintains API compatibility), then the Pages build.
+- **Application updates**: build `web/`, then re-run `bun run deploy` from `worker/`.
+- **Access changes**: manage allowed email addresses in the Access policy without rebuilding the app.
 - **Database backups**: `bunx wrangler d1 export countdown-db --remote --output backup.sql` before major changes.
 
 ## Status

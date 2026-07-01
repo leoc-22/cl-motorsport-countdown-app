@@ -22,4 +22,8 @@ export type CountdownSessionRow = {
 
 export type CountdownEnv = {
   COUNTDOWN_DB: D1Database;
+  ASSETS: Fetcher;
+  TEAM_DOMAIN?: string;
+  POLICY_AUD?: string;
+  AUTH_DISABLED?: string;
 };
