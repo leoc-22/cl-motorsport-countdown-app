@@ -21,14 +21,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy-preview:
-    if: github.event_name == 'pull_request'
+  build:
     runs-on: ubuntu-latest
-    environment: Development
     env:
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      CLOUDFLARE_PAGES_PROJECT_NAME: ${{ secrets.CLOUDFLARE_PAGES_PROJECT_NAME }}
       VITE_API_URL: ${{ secrets.VITE_API_URL }}
     steps:
       - name: Checkout
@@ -43,18 +38,63 @@ jobs:
         working-directory: web
         run: bun install --frozen-lockfile
 
+      - name: Install worker dependencies
+        working-directory: worker
+        run: bun install --frozen-lockfile
+
       - name: Build web app
         working-directory: web
         run: bun run build
 
+      - name: Type-check worker
+        working-directory: worker
+        run: bunx tsc --noEmit
+
+      - name: Upload web build
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: web/dist
+          if-no-files-found: error
+          retention-days: 1
+
+  deploy-preview:
+    needs: build
+    if: github.event_name == 'pull_request' && github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    environment: Development
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_PAGES_PROJECT_NAME: ${{ secrets.CLOUDFLARE_PAGES_PROJECT_NAME }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.2.3"
+
+      - name: Install worker dependencies
+        working-directory: worker
+        run: bun install --frozen-lockfile
+
+      - name: Download web build
+        uses: actions/download-artifact@v4
+        with:
+          name: web-dist
+          path: web/dist
+
       - name: Deploy preview to Cloudflare Pages
-        working-directory: web
+        working-directory: worker
         run: |
-          bunx wrangler pages deploy dist \
+          bunx wrangler pages deploy ../web/dist \
             --project-name "$CLOUDFLARE_PAGES_PROJECT_NAME" \
             --branch "pr-${{ github.event.pull_request.number }}"
 
   deploy-production:
+    needs: build
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     environment: Production
@@ -62,7 +102,6 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_PAGES_PROJECT_NAME: ${{ secrets.CLOUDFLARE_PAGES_PROJECT_NAME }}
-      VITE_API_URL: ${{ secrets.VITE_API_URL }}
     steps:
       - name: Ensure manual deploy runs on main
         if: github.event_name == 'workflow_dispatch' && github.ref != 'refs/heads/main'
@@ -82,21 +121,19 @@ jobs:
         working-directory: worker
         run: bun install --frozen-lockfile
 
-      - name: Install web dependencies
-        working-directory: web
-        run: bun install --frozen-lockfile
+      - name: Download web build
+        uses: actions/download-artifact@v4
+        with:
+          name: web-dist
+          path: web/dist
 
       - name: Deploy worker to production
         working-directory: worker
         run: bun run deploy
 
-      - name: Build web app
-        working-directory: web
-        run: bun run build
-
       - name: Deploy web to production (Cloudflare Pages)
-        working-directory: web
+        working-directory: worker
         run: |
-          bunx wrangler pages deploy dist \
+          bunx wrangler pages deploy ../web/dist \
             --project-name "$CLOUDFLARE_PAGES_PROJECT_NAME" \
             --branch "main"
