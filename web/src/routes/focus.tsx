@@ -168,23 +168,34 @@ function FocusPage() {
       </div>
 
       {nextSessions.length > 0 && (
-        <div className="absolute bottom-6 left-1/2 w-full -translate-x-1/2 px-8 text-center text-sm text-foreground md:text-base">
-          <p className="mb-1 font-medium">Next:</p>
-          {nextSessions.map((session) => (
-            <p key={session.sessionId}>
-              {session.label} ·{" "}
-              {focusDateTimeFormatter.format(
-                new Date(session.startTimeUtc),
-              )}{" "}
-              ·{" "}
-              <span className="font-mono tabular-nums">
-                {formatDuration(
-                  Date.parse(session.startTimeUtc) -
-                    currentTime.getTime(),
-                )}
-              </span>
-            </p>
-          ))}
+        <div className="absolute bottom-6 left-1/2 w-full -translate-x-1/2 overflow-x-auto px-8 text-sm text-foreground md:text-base">
+          <table className="mx-auto whitespace-nowrap">
+            <caption className="mb-1 font-medium">Next:</caption>
+            <tbody>
+              {nextSessions.map((session) => (
+                <tr key={session.sessionId}>
+                  <td className="text-left">{session.label}</td>
+                  <td className="px-3" aria-hidden="true">
+                    ·
+                  </td>
+                  <td className="text-left">
+                    {focusDateTimeFormatter.format(
+                      new Date(session.startTimeUtc),
+                    )}
+                  </td>
+                  <td className="px-3" aria-hidden="true">
+                    ·
+                  </td>
+                  <td className="text-right font-mono tabular-nums">
+                    {formatDuration(
+                      Date.parse(session.startTimeUtc) -
+                        currentTime.getTime(),
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </FocusFullscreenFrame>
