@@ -38,6 +38,60 @@ export const getTimeState = (
   };
 };
 
+const FIFTEEN_MINUTES_MS = 15 * 60 * 1000;
+const ONE_HOUR_MS = 60 * 60 * 1000;
+
+export const getCountdownColorClass = (timeState: TimeState): string => {
+  if (timeState.label === "Completed") {
+    return "text-accent-green";
+  }
+
+  if (timeState.diffMs <= FIFTEEN_MINUTES_MS) {
+    return "text-accent-red";
+  }
+
+  if (timeState.diffMs <= ONE_HOUR_MS) {
+    return "text-accent-amber";
+  }
+
+  return timeState.label === "Starts in" ? "text-subtle" : "text-foreground";
+};
+
+export const getFocusedSession = (
+  sessions: CountdownSession[],
+  pivot: Date,
+): CountdownSession | null => {
+  const now = pivot.getTime();
+  const remainingSessions = sessions
+    .map((session) => {
+      const start = Date.parse(session.startTimeUtc);
+      return {
+        session,
+        start,
+        end: start + session.durationMs,
+      };
+    })
+    .filter(({ start, end }) => Number.isFinite(start) && end > now);
+
+  const runningSessions = remainingSessions.filter(
+    ({ start }) => start <= now,
+  );
+
+  if (runningSessions.length > 0) {
+    return runningSessions.reduce((focused, candidate) =>
+      candidate.end < focused.end ? candidate : focused,
+    ).session;
+  }
+
+  if (remainingSessions.length === 0) {
+    return null;
+  }
+
+  return remainingSessions.reduce((focused, candidate) =>
+    candidate.start < focused.start ? candidate : focused,
+  ).session;
+};
+
 const HIDE_AFTER_COMPLETED_MS = 2 * 60 * 1000;
 
 /**

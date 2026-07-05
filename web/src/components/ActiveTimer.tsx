@@ -1,5 +1,10 @@
 import type { CountdownSession } from "../utils/types";
-import { formatDuration, getTimeState, intlCache } from "../utils/timeUtils";
+import {
+  formatDuration,
+  getCountdownColorClass,
+  getTimeState,
+  intlCache,
+} from "../utils/timeUtils";
 
 type ActiveTimerProps = {
   session: CountdownSession;
@@ -8,33 +13,7 @@ type ActiveTimerProps = {
 
 export const ActiveTimer = ({ session, currentTime }: ActiveTimerProps) => {
   const timeState = getTimeState(session, currentTime);
-
-  // Urgency-based time threshold coloring
-  const getCountdownColor = () => {
-    if (timeState.label === "Completed") {
-      return "text-accent-green";
-    }
-    if (timeState.label === "Starts in") {
-      return "text-subtle";
-    }
-    // Time remaining logic with urgency thresholds
-    const TWO_HOURS = 2 * 60 * 60 * 1000; // 7200000ms
-    const ONE_HOUR = 60 * 60 * 1000; // 3600000ms
-    const FIFTEEN_MINUTES = 15 * 60 * 1000; // 900000ms
-
-    if (timeState.diffMs <= FIFTEEN_MINUTES) {
-      return "text-red-500";
-    }
-    if (timeState.diffMs <= ONE_HOUR) {
-      return "text-orange-500";
-    }
-    if (timeState.diffMs <= TWO_HOURS) {
-      return "text-foreground";
-    }
-    return "text-foreground";
-  };
-
-  const countdownColor = getCountdownColor();
+  const countdownColor = getCountdownColorClass(timeState);
 
   return (
     <div className="space-y-4 rounded-xl border border-border bg-background-surface p-6">

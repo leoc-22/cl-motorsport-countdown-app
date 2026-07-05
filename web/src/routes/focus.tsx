@@ -2,7 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useCountdown } from "../utils/CountdownContext";
 import { useCountdownTimer } from "../hooks/useCountdownTimer";
-import { getTimeState, formatDuration } from "../utils/timeUtils";
+import {
+  getTimeState,
+  formatDuration,
+  getCountdownColorClass,
+  getFocusedSession,
+} from "../utils/timeUtils";
 
 export const Route = createFileRoute("/focus")({
   component: FocusPage,
@@ -86,24 +91,7 @@ function FocusFullscreenFrame({ children }: { children: ReactNode }) {
 function FocusPage() {
   const { sessions, loading, error } = useCountdown();
   const currentTime = useCountdownTimer();
-
-  // Helper to calculate end time from startTimeUtc + durationMs
-  const getEndTime = (session: (typeof sessions)[0]) =>
-    new Date(new Date(session.startTimeUtc).getTime() + session.durationMs);
-
-  // Filter out completed sessions and find the one with earliest end time
-  const activeSessions = sessions.filter(
-    (session) => getEndTime(session) > currentTime,
-  );
-
-  const sessionToFocus =
-    activeSessions.length > 0
-      ? activeSessions.reduce((earliest, current) => {
-          return getEndTime(current) < getEndTime(earliest)
-            ? current
-            : earliest;
-        })
-      : null;
+  const sessionToFocus = getFocusedSession(sessions, currentTime);
 
   if (loading) {
     return (
@@ -146,32 +134,7 @@ function FocusPage() {
     )
     .slice(0, 3);
 
-  // Urgency-based time threshold coloring
-  const getTimerColor = () => {
-    if (timeState.label === "Completed") {
-      return "text-accent-green";
-    }
-    if (timeState.label === "Starts in") {
-      return "text-subtle";
-    }
-    // Time remaining logic with urgency thresholds
-    const TWO_HOURS = 2 * 60 * 60 * 1000; // 7200000ms
-    const ONE_HOUR = 60 * 60 * 1000; // 3600000ms
-    const FIFTEEN_MINUTES = 15 * 60 * 1000; // 900000ms
-
-    if (timeState.diffMs <= FIFTEEN_MINUTES) {
-      return "text-red-500";
-    }
-    if (timeState.diffMs <= ONE_HOUR) {
-      return "text-orange-500";
-    }
-    if (timeState.diffMs <= TWO_HOURS) {
-      return "text-foreground";
-    }
-    return "text-foreground";
-  };
-
-  const timerColor = getTimerColor();
+  const timerColor = getCountdownColorClass(timeState);
 
   return (
     <FocusFullscreenFrame>
@@ -212,7 +175,14 @@ function FocusPage() {
               {session.label} ·{" "}
               {focusDateTimeFormatter.format(
                 new Date(session.startTimeUtc),
-              )}
+              )}{" "}
+              ·{" "}
+              <span className="font-mono tabular-nums">
+                {formatDuration(
+                  Date.parse(session.startTimeUtc) -
+                    currentTime.getTime(),
+                )}
+              </span>
             </p>
           ))}
         </div>
