@@ -2,6 +2,8 @@
 
 A Cloudflare-native countdown scheduler for CL Motorsport team.
 
+This repository also serves as a lightweight test bed for development workflows.
+
 ## Stack Overview
 - **UI**: React 19 + TanStack Router + TypeScript + Tailwind CSS, built with Vite 7 and deployed through Cloudflare Pages. Package management via Bun 1.2+, targeting Node.js 22 for Cloudflare runtime parity.
 - **API**: Cloudflare Worker (modules syntax) exposing RESTful endpoints for session CRUD.
